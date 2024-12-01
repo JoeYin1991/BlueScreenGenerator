@@ -1,4 +1,6 @@
 #include "settingdialog.h"
+#include "appinfo.h"
+#include "onekeysequenceedit.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QCheckBox>
@@ -13,11 +15,17 @@
 #include <QScrollArea>
 #include <QLabel>
 #include <QToolButton>
+#include <QColorDialog>
+#include <QKeySequenceEdit>
+#include <QEvent>
 
 SettingDialog::SettingDialog(QWidget *parent)
     : QDialog(parent)
 {
     initUi();
+    connectSignals();
+    initData();
+
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setWindowFlags(windowFlags() | Qt::WindowMinimizeButtonHint);
     this->resize({800, 600});
@@ -50,6 +58,31 @@ void SettingDialog::initUi()
     initContentWgtUi();
     initContactWgtUi();
     initSettingWgtUi();
+    initBuildWgtUi();
+}
+
+void SettingDialog::initData()
+{
+    const AppInfoModel &model = AppInfo::instance()->getModel();
+    if (model.mEmojiType == EEmojiType::Char) {
+        mEmojiCharRB->click();
+        mEmojiCharLE->setText(model.mEmojiCharacter);
+    } else {
+        mEmojiImgRB->click();
+    }
+
+    mContentTE->setText(model.mMainContent);
+
+    mCttHintTE->setText(model.mCttHint);
+    mCttInfoTE->setText(model.mCttInfo);
+
+    mBgScanBtn->setStyleSheet(
+        QString("background-color: rgb(%1,%2,%3)")
+            .arg(model.mBgColor.red())
+            .arg(model.mBgColor.green())
+            .arg(model.mBgColor.blue()));
+
+    mHotKeyKSE->setKeySequence(model.mHotKey);
 }
 
 void SettingDialog::initEmojiWgtUi()
@@ -77,7 +110,7 @@ void SettingDialog::initEmojiWgtUi()
     charWgtLyt->addSpacing(20);
 
     mEmojiCharLE = new QLineEdit(charWgt);
-    mEmojiCharLE->setText(":(");
+    mEmojiCharLE->setText("");
     charWgtLyt->addWidget(mEmojiCharLE);
 
     QWidget *imgWgt = initGroupItemWidget(mEmojiWgt, EGroupItemType::LastItem, ELayoutType::HBox);
@@ -166,7 +199,8 @@ void SettingDialog::initContactQRCodeWgtUi(QWidget *parent)
     hLayout->addSpacing(20);
 
     mQRCodeLE = new QLineEdit(parent);
-    mQRCodeLE->setDisabled(true);
+    mQRCodeLE->setReadOnly(true);
+    mQRCodeLE->setPlaceholderText(tr("Use default QRCode"));
     hLayout->addWidget(mQRCodeLE);
     hLayout->addSpacing(5);
 
@@ -252,6 +286,7 @@ void SettingDialog::initSettingProgressWgtUi(QWidget *parent)
     hLayout->addSpacing(20);
 
     mProgressLE = new QLineEdit(parent);
+    mProgressLE->setValidator(new QIntValidator(0, 2000000000));
     hLayout->addWidget(mProgressLE);
 }
 
@@ -263,9 +298,8 @@ void SettingDialog::initSettingHotKeyWgtUi(QWidget *parent)
     hLayout->addWidget(mHotKeyLbl);
     hLayout->addSpacing(20);
 
-    mHotKeyBtn = new QToolButton(parent);
-    mHotKeyBtn->setObjectName(QStringLiteral("HotKeyButton"));
-    hLayout->addWidget(mHotKeyBtn);
+    mHotKeyKSE = new OneKeySequenceEdit(parent);
+    hLayout->addWidget(mHotKeyKSE);
     hLayout->addStretch();
 }
 
@@ -279,11 +313,6 @@ void SettingDialog::initSettingCmdWgtUi(QWidget *parent)
 
     mCmdTE = new QTextEdit(parent);
     hLayout->addWidget(mCmdTE);
-}
-
-void SettingDialog::loadQss()
-{
-
 }
 
 void SettingDialog::initGroupItemHeaderUi(QWidget *parentWgt,
@@ -327,21 +356,88 @@ QWidget *SettingDialog::initGroupItemWidget(QWidget *parent,
     if (layoutType == ELayoutType::HBox)
     {
         QHBoxLayout *hLayout = new QHBoxLayout;
-        hLayout->setContentsMargins(40, 10, 40, 10);
+        hLayout->setContentsMargins(35, 10, 35, 10);
         hLayout->setSpacing(0);
         wgt->setLayout(hLayout);
     }
     else if (layoutType == ELayoutType::VBox)
     {
         QVBoxLayout *vLayout = new QVBoxLayout;
-        vLayout->setContentsMargins(40, 10, 40, 10);
+        vLayout->setContentsMargins(35, 10, 35, 10);
         vLayout->setSpacing(0);
         wgt->setLayout(vLayout);
     }
     return wgt;
 }
 
-void SettingDialog::initData()
+void SettingDialog::initBuildWgtUi()
 {
+    mBuildWgt = new QWidget(this);
+    mBuildWgt->setObjectName(QStringLiteral("GroupWidget"));
+    mMainLayout->addWidget(mBuildWgt);
 
+    QHBoxLayout *hLayout = new QHBoxLayout;
+    hLayout->setContentsMargins(0, 20, 0, 20);
+    hLayout->setSpacing(0);
+    mBuildWgt->setLayout(hLayout);
+
+    mBuildBtn = new QToolButton(mBuildWgt);
+    mBuildBtn->setObjectName(QStringLiteral("BuildButton"));
+    mBuildBtn->setText(tr("Generate Blue Screen Exe"));
+    hLayout->addWidget(mBuildBtn, 0, Qt::AlignCenter);
+}
+
+void SettingDialog::connectSignals()
+{
+    connect(mEmojiCharRB, &QRadioButton::clicked, this, &SettingDialog::slotClickEmojiRadioBtn);
+    connect(mEmojiImgRB, &QRadioButton::clicked, this, &SettingDialog::slotClickEmojiRadioBtn);
+
+    connect(mBgScanBtn, &QToolButton::clicked, this, &SettingDialog::slotClickBgScanBtn);
+    connect(mBuildBtn, &QToolButton::clicked, this, &SettingDialog::slotClickBuildBtn);
+}
+
+bool SettingDialog::eventFilter(QObject *obj, QEvent *event)
+{
+    return QDialog::eventFilter(obj, event);
+}
+
+void SettingDialog::slotClickEmojiRadioBtn()
+{
+    if (mEmojiCharRB->isChecked())
+    {
+        mEmojiCharLE->setEnabled(true);
+        mEmojiImgLE->setEnabled(false);
+        mEmojiImgScanBtn->setEnabled(false);
+    }
+    else
+    {
+        mEmojiCharLE->setEnabled(false);
+        mEmojiImgLE->setEnabled(true);
+        mEmojiImgScanBtn->setEnabled(true);
+    }
+}
+
+void SettingDialog::slotClickBgScanBtn()
+{
+    QColor color = QColorDialog::getColor(
+        AppInfo::instance()->getModel().mBgColor,
+        this,
+        tr("Select Background")
+        );
+    if (!color.isValid()) {
+        return;
+    }
+
+    AppInfo::instance()->getModel().mBgColor = color;
+
+    mBgScanBtn->setStyleSheet(
+        QString("background-color: rgb(%1,%2,%3)")
+            .arg(color.red())
+            .arg(color.green())
+            .arg(color.blue()));
+}
+
+void SettingDialog::slotClickBuildBtn()
+{
+    AppInfo::instance()->save();
 }

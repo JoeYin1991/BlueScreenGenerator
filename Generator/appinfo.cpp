@@ -7,6 +7,11 @@ AppInfo *AppInfo::instance()
     return &info;
 }
 
+void AppInfo::save()
+{
+    QString path;
+}
+
 AppInfo::AppInfo()
 {
     init();
@@ -21,10 +26,8 @@ void AppInfo::init()
 
     model.mCttHint = "For more information about this issue and possible fixes, visit https://www.windows.com/stopcode";
     model.mCttInfo = "If you call a support person, give them this info: Stop code: CRITICAL_PROCESS_DIED";
+    model.mBgColor = QColor(0, 120, 215);
 
-    QRgba64 rgba64;
-    rgba64.setRed(0);
-    rgba64.setGreen(120);
-    rgba64.setBlue(215);
-    model.mBgColor = rgba64.toArgb32();
+    model.mHotKey = "ctrl+d";
+
 }

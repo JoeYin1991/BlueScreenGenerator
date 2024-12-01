@@ -11,10 +11,12 @@ CONFIG += c++17
 SOURCES += \
     appinfo.cpp \
     main.cpp \
+    onekeysequenceedit.cpp \
     settingdialog.cpp
 
 HEADERS += \
     appinfo.h \
+    onekeysequenceedit.h \
     settingdialog.h
 
 # Default rules for deployment.

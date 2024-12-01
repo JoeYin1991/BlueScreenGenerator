@@ -21,6 +21,7 @@ class QLineEdit;
 class QTextEdit;
 class QLabel;
 class QToolButton;
+class OneKeySequenceEdit;
 class SettingDialog : public QDialog
 {
     Q_OBJECT
@@ -47,45 +48,56 @@ private:
     void initSettingHotKeyWgtUi(QWidget *parent);
     void initSettingCmdWgtUi(QWidget *parent);
 
-    void loadQss();
-
     void initGroupItemHeaderUi(QWidget *parentWgt,
                                const QString& titleText,
                                const QString& descText);
     QWidget *initGroupItemWidget(QWidget *parent,
                                  EGroupItemType itemType = EGroupItemType::MiddleItem,
                                  ELayoutType layoutType = ELayoutType::VBox);
+
+    void initBuildWgtUi();
+    void connectSignals();
+protected:
+    bool eventFilter(QObject *o, QEvent *e) override;
+
+private slots:
+    void slotClickEmojiRadioBtn();
+    void slotClickBgScanBtn();
+    void slotClickBuildBtn();
 private:
-    QScrollArea     *mScrollArea = nullptr;
-    QVBoxLayout     *mMainLayout = nullptr;
+    QScrollArea             *mScrollArea = nullptr;
+    QVBoxLayout             *mMainLayout = nullptr;
 
-    QWidget         *mEmojiWgt = nullptr;
-    QRadioButton    *mEmojiCharRB = nullptr;
-    QLineEdit       *mEmojiCharLE = nullptr;
-    QRadioButton    *mEmojiImgRB = nullptr;
-    QLineEdit       *mEmojiImgLE = nullptr;
-    QToolButton     *mEmojiImgScanBtn = nullptr;
+    QWidget                 *mEmojiWgt = nullptr;
+    QRadioButton            *mEmojiCharRB = nullptr;
+    QLineEdit               *mEmojiCharLE = nullptr;
+    QRadioButton            *mEmojiImgRB = nullptr;
+    QLineEdit               *mEmojiImgLE = nullptr;
+    QToolButton             *mEmojiImgScanBtn = nullptr;
 
-    QWidget         *mContentWgt = nullptr;
-    QTextEdit       *mContentTE = nullptr;
+    QWidget                 *mContentWgt = nullptr;
+    QTextEdit               *mContentTE = nullptr;
 
-    QWidget         *mContactWgt = nullptr;
-    QLabel          *mQRCodeLbl = nullptr;
-    QLineEdit       *mQRCodeLE = nullptr;
-    QToolButton     *mQRCodeScanBtn = nullptr;
-    QLabel          *mCttHintLbl = nullptr;
-    QTextEdit       *mCttHintTE = nullptr;
-    QLabel          *mCttInfoLbl = nullptr;
-    QTextEdit       *mCttInfoTE = nullptr;
+    QWidget                 *mContactWgt = nullptr;
+    QLabel                  *mQRCodeLbl = nullptr;
+    QLineEdit               *mQRCodeLE = nullptr;
+    QToolButton             *mQRCodeScanBtn = nullptr;
+    QLabel                  *mCttHintLbl = nullptr;
+    QTextEdit               *mCttHintTE = nullptr;
+    QLabel                  *mCttInfoLbl = nullptr;
+    QTextEdit               *mCttInfoTE = nullptr;
 
-    QWidget         *mSettingWgt = nullptr;
-    QLabel          *mBgLbl = nullptr;
-    QToolButton     *mBgScanBtn = nullptr;
-    QLabel          *mProgressLbl = nullptr;
-    QLineEdit       *mProgressLE = nullptr;
-    QLabel          *mHotKeyLbl = nullptr;
-    QToolButton     *mHotKeyBtn = nullptr;
-    QLabel          *mCmdLbl = nullptr;
-    QTextEdit       *mCmdTE = nullptr;
+    QWidget                 *mSettingWgt = nullptr;
+    QLabel                  *mBgLbl = nullptr;
+    QToolButton             *mBgScanBtn = nullptr;
+    QLabel                  *mProgressLbl = nullptr;
+    QLineEdit               *mProgressLE = nullptr;
+    QLabel                  *mHotKeyLbl = nullptr;
+    OneKeySequenceEdit      *mHotKeyKSE = nullptr;
+    QLabel                  *mCmdLbl = nullptr;
+    QTextEdit               *mCmdTE = nullptr;
+
+    QWidget                 *mBuildWgt = nullptr;
+    QToolButton             *mBuildBtn = nullptr;
 };
 #endif // SETTINGDIALOG_H

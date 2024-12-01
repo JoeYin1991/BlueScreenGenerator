@@ -2,6 +2,7 @@
 #define APPINFO_H
 
 #include <QObject>
+#include <QColor>
 
 enum class EEmojiType {
     Char,
@@ -20,7 +21,7 @@ struct AppInfoModel
     QString         mCttHint;
     QString         mCttInfo;
 
-    uint            mBgColor;
+    QColor          mBgColor;
     QString         mHotKey;
     int             progressTime;
     QString         cmd;
@@ -30,7 +31,9 @@ class AppInfo
 {
 public:
     static AppInfo *instance();
-    const AppInfoModel& getModel(){return model;};
+    AppInfoModel& getModel(){return model;};
+
+    void save();
 private:
     AppInfo();
     void init();
