@@ -4,7 +4,16 @@
 #include <QSettings>
 #include <QTextCodec>
 
-const QString ini_name = "config.ini";
+const char *KEY_EMOJI_CHAR = "emoji_char";
+const char *KEY_EMOJI_PATH = "emoji_path";
+const char *KEY_MAIN_CONTENT = "main_content";
+const char *KEY_CONTACT_HINT = "contact_hint";
+const char *KEY_CONTACT_INFO = "contact_info";
+const char *KEY_QRCODE = "qrcode";
+const char *KEY_BACKGROUND_COLOR = "background_color";
+const char *KEY_PROGRESS_TIME = "progress_time";
+const char *KEY_HOT_KEY = "hot_key";
+const char *KEY_EXEC_CMD = "execute_cmd";
 
 AppInfo *AppInfo::instance()
 {
@@ -14,45 +23,67 @@ AppInfo *AppInfo::instance()
 
 void AppInfo::save()
 {
-    QString path = QCoreApplication::applicationDirPath() + "/" + ini_name;
-    QSettings settings(path, QSettings::IniFormat);
+    QSettings settings(iniPath, QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     if (model.mEmojiType == EEmojiType::Char) {
-        settings.setValue("emoji_char", model.mEmojiCharacter);
-        settings.setValue("emoji_path", "");
+        settings.setValue(KEY_EMOJI_CHAR, model.mEmojiCharacter);
+        settings.setValue(KEY_EMOJI_PATH, "");
     } else {
-        settings.setValue("emoji_char", "");
-        settings.setValue("emoji_path", model.mEmojiImgPath);
+        settings.setValue(KEY_EMOJI_CHAR, "");
+        settings.setValue(KEY_EMOJI_PATH, model.mEmojiImgPath);
     }
 
-    settings.setValue("main_content", model.mMainContent);
-    settings.setValue("contact_hint", model.mCttHint);
-    settings.setValue("contact_info", model.mCttInfo);
-    settings.setValue("qrcode", model.mQrcodePath);
+    settings.setValue(KEY_MAIN_CONTENT, model.mMainContent);
+    settings.setValue(KEY_CONTACT_HINT, model.mCttHint);
+    settings.setValue(KEY_CONTACT_INFO, model.mCttInfo);
+    settings.setValue(KEY_QRCODE, model.mQrcodePath);
 
-    settings.setValue("background_color", QString("%1,%2,%3").arg(model.mBgColor.red()).arg(model.mBgColor.green()).arg(model.mBgColor.blue()));
-    settings.setValue("progress_time", model.progressTime);
-    settings.setValue("hot_key", model.mHotKey);
-    settings.setValue("execute_cmd", model.cmd);
+    settings.setValue(KEY_BACKGROUND_COLOR, QString("%1,%2,%3").arg(model.mBgColor.red()).arg(model.mBgColor.green()).arg(model.mBgColor.blue()));
+    settings.setValue(KEY_PROGRESS_TIME, model.progressTime);
+    settings.setValue(KEY_HOT_KEY, model.mHotKey);
+    settings.setValue(KEY_EXEC_CMD, model.cmd);
+}
+
+void AppInfo::reset()
+{
+    model.reset();
 }
 
 AppInfo::AppInfo()
+    : iniPath(QCoreApplication::applicationDirPath() + "/" + "config.ini")
 {
     init();
 }
 
 void AppInfo::init()
 {
-    model.mEmojiType = EEmojiType::Char;
-    model.mEmojiCharacter = ":(";
+    loadConfig();
+}
 
-    model.mMainContent = "Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.";
+void AppInfo::loadConfig()
+{
+    QSettings settings(iniPath, QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    model.mCttHint = "For more information about this issue and possible fixes, visit https://www.windows.com/stopcode";
-    model.mCttInfo = "If you call a support person, give them this info: Stop code: CRITICAL_PROCESS_DIED";
-    model.mBgColor = QColor(0, 120, 215);
+    model.mEmojiCharacter = settings.value(KEY_EMOJI_CHAR).toString();
+    model.mEmojiImgPath = settings.value(KEY_EMOJI_PATH).toString();
+    if (!model.mEmojiImgPath.isEmpty()) {
+        model.mEmojiType = EEmojiType::Img;
+    } else {
+        model.mEmojiType = EEmojiType::Char;
+    }
 
-    model.mHotKey = "ctrl+d";
+    model.mMainContent = settings.value(KEY_MAIN_CONTENT).toString();
+    model.mCttHint = settings.value(KEY_CONTACT_HINT).toString();
+    model.mCttInfo = settings.value(KEY_CONTACT_INFO).toString();
+    model.mQrcodePath = settings.value(KEY_QRCODE).toString();
 
+    QStringList colorList = settings.value(KEY_BACKGROUND_COLOR).toString().split(",");
+    if (colorList.size() == 3) {
+        model.mBgColor = QColor(colorList[0].toUInt(), colorList[1].toUInt(), colorList[2].toUInt());
+    }
+    model.progressTime = settings.value(KEY_PROGRESS_TIME).toUInt();
+    model.mHotKey = settings.value(KEY_HOT_KEY).toString();
+    model.cmd = settings.value(KEY_EXEC_CMD).toString();
 }

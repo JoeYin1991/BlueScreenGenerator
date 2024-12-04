@@ -83,6 +83,8 @@ void SettingDialog::initData()
             .arg(model.mBgColor.blue()));
 
     mHotKeyKSE->setKeySequence(model.mHotKey);
+    mProgressLE->setText(QString::number(model.progressTime));
+    mCmdTE->setText(model.cmd);
 }
 
 void SettingDialog::initEmojiWgtUi()
@@ -380,11 +382,19 @@ void SettingDialog::initBuildWgtUi()
     hLayout->setContentsMargins(0, 20, 0, 20);
     hLayout->setSpacing(0);
     mBuildWgt->setLayout(hLayout);
+    hLayout->addStretch();
 
     mBuildBtn = new QToolButton(mBuildWgt);
     mBuildBtn->setObjectName(QStringLiteral("BuildButton"));
     mBuildBtn->setText(tr("Generate Blue Screen Exe"));
-    hLayout->addWidget(mBuildBtn, 0, Qt::AlignCenter);
+    hLayout->addWidget(mBuildBtn);
+    hLayout->addSpacing(20);
+
+    mResetBtn = new QToolButton(mBuildWgt);
+    mResetBtn->setObjectName(QStringLiteral("BuildButton"));
+    mResetBtn->setText(tr("Reset to Default Settings"));
+    hLayout->addWidget(mResetBtn);
+    hLayout->addStretch();
 }
 
 void SettingDialog::connectSignals()
@@ -394,6 +404,7 @@ void SettingDialog::connectSignals()
 
     connect(mBgScanBtn, &QToolButton::clicked, this, &SettingDialog::slotClickBgScanBtn);
     connect(mBuildBtn, &QToolButton::clicked, this, &SettingDialog::slotClickBuildBtn);
+    connect(mResetBtn, &QToolButton::clicked, this, &SettingDialog::slotClickResetBtn);
 }
 
 bool SettingDialog::eventFilter(QObject *obj, QEvent *event)
@@ -439,5 +450,32 @@ void SettingDialog::slotClickBgScanBtn()
 
 void SettingDialog::slotClickBuildBtn()
 {
+    AppInfoModel &model = AppInfo::instance()->getModel();
+    if (mEmojiCharRB->isChecked())
+    {
+        model.mEmojiType = EEmojiType::Char;
+        model.mEmojiCharacter = mEmojiCharLE->text();
+        model.mEmojiImgPath = "";
+    }
+    else
+    {
+        model.mEmojiType = EEmojiType::Img;
+        model.mEmojiCharacter = "";
+        model.mEmojiImgPath = mEmojiImgLE->text();
+    }
+
+    model.mMainContent = mContentTE->toPlainText();
+    model.mCttHint = mCttHintTE->toPlainText();
+    model.mCttInfo = mCttInfoTE->toPlainText();
+
+    model.progressTime = mProgressLE->text().toUInt();
+    model.mHotKey = mHotKeyKSE->keySequence().toString();
+    model.cmd = mCmdTE->toPlainText();
     AppInfo::instance()->save();
+}
+
+void SettingDialog::slotClickResetBtn()
+{
+    AppInfo::instance()->reset();
+    initData();
 }

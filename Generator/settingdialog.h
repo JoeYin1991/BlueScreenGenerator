@@ -64,6 +64,7 @@ private slots:
     void slotClickEmojiRadioBtn();
     void slotClickBgScanBtn();
     void slotClickBuildBtn();
+    void slotClickResetBtn();
 private:
     QScrollArea             *mScrollArea = nullptr;
     QVBoxLayout             *mMainLayout = nullptr;
@@ -99,5 +100,6 @@ private:
 
     QWidget                 *mBuildWgt = nullptr;
     QToolButton             *mBuildBtn = nullptr;
+    QToolButton             *mResetBtn = nullptr;
 };
 #endif // SETTINGDIALOG_H
