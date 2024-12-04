@@ -1,5 +1,5 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    BlueScreen \
-    Generator
+    src/BlueScreen \
+    src/Generator
