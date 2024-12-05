@@ -4,17 +4,6 @@
 #include <QSettings>
 #include <QTextCodec>
 
-const char *KEY_EMOJI_CHAR = "emoji_char";
-const char *KEY_EMOJI_PATH = "emoji_path";
-const char *KEY_MAIN_CONTENT = "main_content";
-const char *KEY_CONTACT_HINT = "contact_hint";
-const char *KEY_CONTACT_INFO = "contact_info";
-const char *KEY_QRCODE = "qrcode";
-const char *KEY_BACKGROUND_COLOR = "background_color";
-const char *KEY_PROGRESS_TIME = "progress_time";
-const char *KEY_HOT_KEY = "hot_key";
-const char *KEY_EXEC_CMD = "execute_cmd";
-
 AppInfo *AppInfo::instance()
 {
     static AppInfo info;

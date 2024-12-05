@@ -4,6 +4,7 @@
 #include "../def.h"
 #include <QDialog>
 
+class QVBoxLayout;
 class BlueScreenDlg : public QDialog
 {
     Q_OBJECT
@@ -15,7 +16,13 @@ public:
 private:
     void initUi();
     void initData();
+
+    void initEmojiUi();
+    void initMainContentUi();
 private:
-    AppInfoModel    model;
+    const QString               iniPath;
+    AppInfoModel                model;
+
+    QVBoxLayout                 *mLayout = nullptr;
 };
 #endif // BLUESCREEN_H
