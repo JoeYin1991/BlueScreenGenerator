@@ -4,6 +4,7 @@
 #include "../def.h"
 #include <QDialog>
 
+class QLabel;
 class QVBoxLayout;
 class BlueScreenDlg : public QDialog
 {
@@ -19,10 +20,16 @@ private:
 
     void initEmojiUi();
     void initMainContentUi();
+    void initProgressUi();
+    void initContactUi();
+
+    void updateProgress();
 private:
     const QString               iniPath;
     AppInfoModel                model;
 
     QVBoxLayout                 *mLayout = nullptr;
+    QLabel                      *progressLbl = nullptr;
+    int                         progress = 0;
 };
 #endif // BLUESCREEN_H

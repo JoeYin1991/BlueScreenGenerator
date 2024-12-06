@@ -36,6 +36,7 @@ struct AppInfoModel
     QColor          mFontColor;
     QString         mHotKey;
     int             progressTime;
+    QString         progressSuffix;
     QString         cmd;
 
     AppInfoModel()
@@ -48,7 +49,7 @@ struct AppInfoModel
         mEmojiType = EEmojiType::Char;
         mEmojiCharacter = ":(";
 
-        mMainContent = "Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.";
+        mMainContent = "Your PC ran into a problem and needs to restart.\nWe're just collecting some error info, and then we'll restart for you.";
 
         mCttHint = "For more information about this issue and possible fixes, visit https://www.windows.com/stopcode";
         mCttInfo = "If you call a support person, give them this info: Stop code: CRITICAL_PROCESS_DIED";
@@ -56,7 +57,8 @@ struct AppInfoModel
         mFontColor = Qt::white;
 
         mHotKey = "ctrl+d";
-        progressTime = 0;
+        progressTime = 60;
+        progressSuffix = "complete";
     }
 };
 
