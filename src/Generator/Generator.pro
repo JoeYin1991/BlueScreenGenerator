@@ -9,14 +9,14 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    appinfo.cpp \
+    ../Common/appinfo.cpp \
     main.cpp \
     onekeysequenceedit.cpp \
     settingdialog.cpp
 
 HEADERS += \
-    ../def.h \
-    appinfo.h \
+    ../Common/def.h \
+    ../Common/appinfo.h \
     onekeysequenceedit.h \
     settingdialog.h
 

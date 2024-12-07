@@ -1,5 +1,5 @@
 #include "settingdialog.h"
-#include "appinfo.h"
+#include "../Common/appinfo.h"
 #include "onekeysequenceedit.h"
 #include <QVBoxLayout>
 #include <QLabel>

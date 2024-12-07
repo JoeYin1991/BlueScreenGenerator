@@ -1,7 +1,7 @@
 #ifndef APPINFO_H
 #define APPINFO_H
 
-#include "../def.h"
+#include "def.h"
 #include <QObject>
 #include <QColor>
 

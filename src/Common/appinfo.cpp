@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QSettings>
 #include <QTextCodec>
+#include <QFileInfo>
 
 AppInfo *AppInfo::instance()
 {
@@ -52,6 +53,9 @@ void AppInfo::init()
 
 void AppInfo::loadConfig()
 {
+    if (!QFileInfo::exists(iniPath)) {
+        return;
+    }
     QSettings settings(iniPath, QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 

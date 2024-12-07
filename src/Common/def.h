@@ -57,7 +57,7 @@ struct AppInfoModel
         mFontColor = Qt::white;
 
         mHotKey = "ctrl+d";
-        progressTime = 60;
+        progressTime = 30;
         progressSuffix = "complete";
     }
 };

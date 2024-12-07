@@ -1,8 +1,8 @@
 #ifndef BLUESCREEN_H
 #define BLUESCREEN_H
 
-#include "../def.h"
 #include <QDialog>
+#include "../Common/def.h"
 
 class QLabel;
 class QVBoxLayout;
@@ -11,12 +11,15 @@ class BlueScreenDlg : public QDialog
     Q_OBJECT
 
 public:
-    BlueScreenDlg(QWidget *parent = nullptr);
+    BlueScreenDlg(bool isMainScreen,
+                  QWidget *parent = nullptr);
     ~BlueScreenDlg();
 
+private slots:
+    void slotTimeout();
 private:
     void initUi();
-    void initData();
+    void initTimer();
 
     void initEmojiUi();
     void initMainContentUi();
@@ -25,11 +28,11 @@ private:
 
     void updateProgress();
 private:
-    const QString               iniPath;
-    AppInfoModel                model;
-
-    QVBoxLayout                 *mLayout = nullptr;
-    QLabel                      *progressLbl = nullptr;
-    int                         progress = 0;
+    const AppInfoModel          &model;
+    bool                        isMainScreen = false;
+    QVBoxLayout*                mLayout = nullptr;
+    QLabel*                     mProgressLbl = nullptr;
+    int                         mProgress = 0;
+    QTimer*                     mTimer;
 };
 #endif // BLUESCREEN_H

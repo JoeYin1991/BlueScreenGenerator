@@ -1,23 +1,50 @@
 #include "bluescreen.h"
+#include "../Common/appinfo.h"
 #include <QSettings>
 #include <QTextCodec>
 #include <QCoreApplication>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QFileInfo>
+#include <QTimer>
+#include <QKeyEvent>
+#include <QDebug>
 
-BlueScreenDlg::BlueScreenDlg(QWidget *parent)
+BlueScreenDlg::BlueScreenDlg(bool isMainScreen,
+                             QWidget *parent)
     : QDialog(parent)
-    , iniPath(QCoreApplication::applicationDirPath() + "/" + "config.ini")
+    , model(AppInfo::instance()->getModel())
+    , isMainScreen(isMainScreen)
 {
     setWindowFlags(Qt::FramelessWindowHint);
 
-    initData();
-    initUi();
-
+    if (isMainScreen)
+    {
+        initUi();
+        initTimer();
+    }
+    else
+    {
+        this->setStyleSheet(
+            QString("background-color: rgb(%1,%2,%3)")
+                .arg(model.mBgColor.red())
+                .arg(model.mBgColor.green())
+                .arg(model.mBgColor.blue()));
+    }
 }
 
 BlueScreenDlg::~BlueScreenDlg() {}
+
+void BlueScreenDlg::slotTimeout()
+{
+    ++mProgress;
+    updateProgress();
+    if (mProgress >= 100)
+    {
+        mTimer->stop();
+        qApp->quit();
+    }
+}
 
 void BlueScreenDlg::initUi()
 {
@@ -50,34 +77,12 @@ void BlueScreenDlg::initUi()
     mLayout->addStretch();
 }
 
-void BlueScreenDlg::initData()
+void BlueScreenDlg::initTimer()
 {
-    if (!QFileInfo::exists(iniPath)) {
-        return;
-    }
-    QSettings settings(iniPath, QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-
-    model.mEmojiCharacter = settings.value(KEY_EMOJI_CHAR).toString();
-    model.mEmojiImgPath = settings.value(KEY_EMOJI_PATH).toString();
-    if (!model.mEmojiImgPath.isEmpty()) {
-        model.mEmojiType = EEmojiType::Img;
-    } else {
-        model.mEmojiType = EEmojiType::Char;
-    }
-
-    model.mMainContent = settings.value(KEY_MAIN_CONTENT).toString();
-    model.mCttHint = settings.value(KEY_CONTACT_HINT).toString();
-    model.mCttInfo = settings.value(KEY_CONTACT_INFO).toString();
-    model.mQrcodePath = settings.value(KEY_QRCODE).toString();
-
-    QStringList colorList = settings.value(KEY_BACKGROUND_COLOR).toString().split(",");
-    if (colorList.size() == 3) {
-        model.mBgColor = QColor(colorList[0].toUInt(), colorList[1].toUInt(), colorList[2].toUInt());
-    }
-    model.progressTime = settings.value(KEY_PROGRESS_TIME).toUInt();
-    model.mHotKey = settings.value(KEY_HOT_KEY).toString();
-    model.cmd = settings.value(KEY_EXEC_CMD).toString();
+    mTimer = new QTimer(this);
+    connect(mTimer, &QTimer::timeout, this, &BlueScreenDlg::slotTimeout);
+    int msec = model.progressTime * 1000 / 100;
+    mTimer->start(msec);
 }
 
 void BlueScreenDlg::initEmojiUi()
@@ -109,13 +114,13 @@ void BlueScreenDlg::initMainContentUi()
 
 void BlueScreenDlg::initProgressUi()
 {
-    progressLbl = new QLabel(this);
-    progressLbl->setStyleSheet(QString("font-family: 'Microsoft YaHei UI';"
+    mProgressLbl = new QLabel(this);
+    mProgressLbl->setStyleSheet(QString("font-family: 'Microsoft YaHei UI';"
                                   "font-size: 30px;"
                                   "font-weight: 200;"
                                   "color: rgb(%1,%2,%3);"
                                   ).arg(model.mFontColor.red()).arg(model.mFontColor.green()).arg(model.mFontColor.blue()));
-    mLayout->addWidget(progressLbl);
+    mLayout->addWidget(mProgressLbl);
     updateProgress();
 }
 
@@ -172,5 +177,5 @@ void BlueScreenDlg::initContactUi()
 
 void BlueScreenDlg::updateProgress()
 {
-    progressLbl->setText(QString("%1% %2").arg(progress).arg(model.progressSuffix));
+    mProgressLbl->setText(QString("%1% %2").arg(mProgress).arg(model.progressSuffix));
 }

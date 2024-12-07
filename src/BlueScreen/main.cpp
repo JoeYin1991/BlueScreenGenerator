@@ -1,7 +1,71 @@
 #include "bluescreen.h"
+#include "../Common/appinfo.h"
 #include <Windows.h>
 #include <QApplication>
 #include <QDebug>
+#include <QSettings>
+
+#define TASKMANAGER "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
+
+HHOOK keyHook=NULL;
+HHOOK mouseHook=NULL;
+
+void disableTaskManager(bool isDisable)
+{
+    QSettings settings(TASKMANAGER, QSettings::NativeFormat);
+    if (isDisable) {
+        settings.setValue("DisableTaskMgr", "1");
+    }else {
+        settings.remove("DisableTaskMgr");
+    }
+}
+
+
+LRESULT CALLBACK keyProc(int nCode,WPARAM wParam,LPARAM lParam )
+{
+    KBDLLHOOKSTRUCT *pkbhs = (KBDLLHOOKSTRUCT *) lParam;
+    if(nCode == HC_ACTION)
+    {
+        // if(pkbhs->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL)& 0x8000 && GetAsyncKeyState(VK_SHIFT)&0x8000){
+        //     qDebug() << "Ctrl+Shift+Esc";
+        // }else if(pkbhs->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL) & 0x8000){
+        //     qDebug() << "Ctrl+Esc";
+        // }else if(pkbhs->vkCode == VK_TAB && pkbhs->flags & LLKHF_ALTDOWN){
+        //     qDebug() << "Alt+Tab";
+        // }else if(pkbhs->vkCode == VK_ESCAPE && pkbhs->flags &LLKHF_ALTDOWN){
+        //     qDebug() << "Alt+Esc";
+        // }else if(pkbhs->vkCode == VK_LWIN || pkbhs->vkCode == VK_RWIN){
+        //     qDebug() << "LWIN/RWIN";
+        // }else if(pkbhs->vkCode == VK_F4 && pkbhs->flags & LLKHF_ALTDOWN){
+        //     qDebug() << "Alt+F4";
+        // }
+        if(pkbhs->vkCode == VK_F12)
+        {
+            qApp->quit();
+        }
+    }
+    return 1;
+    // return CallNextHookEx(keyHook, nCode, wParam, lParam);
+}
+
+LRESULT CALLBACK mouseProc(int nCode,WPARAM wParam,LPARAM lParam )
+{
+    return 1;
+}
+
+void unHook()
+{
+    disableTaskManager(false);
+    UnhookWindowsHookEx(keyHook);
+    UnhookWindowsHookEx(mouseHook);
+}
+
+void setHook()
+{
+    disableTaskManager(true);
+    keyHook =SetWindowsHookEx(WH_KEYBOARD_LL,keyProc,GetModuleHandle(NULL),0);
+    mouseHook =SetWindowsHookEx( WH_MOUSE_LL,mouseProc,GetModuleHandle(NULL),0);
+}
 
 QRect GetScreenRect(int screen) {
 
@@ -30,17 +94,22 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
+    AppInfo::instance();
+
+    setHook();
+    ShowCursor(false);
     int numbers = GetSystemMetrics(SM_CMONITORS);
     QVector<BlueScreenDlg*> dlgVec;
     for (int i = 0; i < numbers; ++i) {
-        BlueScreenDlg *dlg = new BlueScreenDlg;
-        dlgVec.append(dlg);
         auto rc = GetScreenRect(i);
-        if (rc.x() != 0 || rc.y() != 0) {
-            continue;
-        }
+        bool isMainScreen = rc.x() == 0 && rc.y() == 0;
+        BlueScreenDlg *dlg = new BlueScreenDlg(isMainScreen);
+        dlgVec.append(dlg);
         dlg->show();
-        SetWindowPos(reinterpret_cast<HWND>(dlg->winId()), NULL, rc.x(), rc.y(), rc.width(), rc.height(), NULL);
+        SetWindowPos(reinterpret_cast<HWND>(dlg->winId()), HWND_TOPMOST, rc.x(), rc.y(), rc.width(), rc.height(), NULL);
     }
-    return a.exec();
+
+    int retCode = a.exec();
+    unHook();
+    return retCode;
 }
