@@ -20,6 +20,15 @@ HEADERS += \
     onekeysequenceedit.h \
     settingdialog.h
 
+win32:CONFIG(debug, debug|release): {
+    QMAKE_CFLAGS_DEBUG += -MTd
+    QMAKE_CXXFLAGS_DEBUG += -MTd
+}
+else:win32:CONFIG(release, debug|release): {
+    QMAKE_CFLAGS_RELEASE += -MT
+    QMAKE_CXXFLAGS_RELEASE += -MT
+}
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
