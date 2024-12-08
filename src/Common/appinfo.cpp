@@ -4,6 +4,8 @@
 #include <QSettings>
 #include <QTextCodec>
 #include <QFileInfo>
+#include <QKeySequence>
+#include <QDebug>
 
 AppInfo *AppInfo::instance()
 {
@@ -38,6 +40,35 @@ void AppInfo::save()
 void AppInfo::reset()
 {
     model.reset();
+}
+
+bool AppInfo::isHotKeyPressed(KBDLLHOOKSTRUCT *pkbhs)
+{
+    QStringList hotkeys = model.mHotKey.toLower().split("+");
+    do
+    {
+        int key = QKeySequence(model.mHotKey)[hotkeys.count()];
+        qInfo() << (int)pkbhs->vkCode << " " << key;
+        if (hotkeys.contains("ctrl") && !(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
+            break;
+        }
+        if (hotkeys.contains("shift") && !(GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
+            break;
+        }
+        if (hotkeys.contains("alt") && !(GetAsyncKeyState(VK_MENU) & 0x8000)) {
+            break;
+        }
+        if (hotkeys.contains("meta") && !(GetAsyncKeyState(VK_LWIN) & 0x8000) && !(GetAsyncKeyState(VK_RWIN) & 0x8000)) {
+            break;
+        }
+        // int key = QKeySequence(model.mHotKey)[hotkeys.count()];
+        // qInfo() << (int)pkbhs->vkCode << " " << key;
+        if (pkbhs->vkCode == key) {
+            return true;
+        }
+    }while(0);
+
+    return false;
 }
 
 AppInfo::AppInfo()

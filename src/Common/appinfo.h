@@ -2,6 +2,7 @@
 #define APPINFO_H
 
 #include "def.h"
+#include <Windows.h>
 #include <QObject>
 #include <QColor>
 
@@ -13,6 +14,8 @@ public:
 
     void save();
     void reset();
+
+    bool isHotKeyPressed(KBDLLHOOKSTRUCT *pkbhs);
 private:
     AppInfo();
     void init();

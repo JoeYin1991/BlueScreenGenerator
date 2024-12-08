@@ -20,6 +20,9 @@ HEADERS += \
     onekeysequenceedit.h \
     settingdialog.h
 
+LIBS += \
+    User32.lib
+
 win32:CONFIG(debug, debug|release): {
     QMAKE_CFLAGS_DEBUG += -MTd
     QMAKE_CXXFLAGS_DEBUG += -MTd

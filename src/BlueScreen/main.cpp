@@ -39,7 +39,7 @@ LRESULT CALLBACK keyProc(int nCode,WPARAM wParam,LPARAM lParam )
         // }else if(pkbhs->vkCode == VK_F4 && pkbhs->flags & LLKHF_ALTDOWN){
         //     qDebug() << "Alt+F4";
         // }
-        if(pkbhs->vkCode == VK_F12)
+        if(AppInfo::instance()->isHotKeyPressed(pkbhs))
         {
             qApp->quit();
         }
@@ -55,14 +55,14 @@ LRESULT CALLBACK mouseProc(int nCode,WPARAM wParam,LPARAM lParam )
 
 void unHook()
 {
-    disableTaskManager(false);
+    // disableTaskManager(false);
     UnhookWindowsHookEx(keyHook);
     UnhookWindowsHookEx(mouseHook);
 }
 
 void setHook()
 {
-    disableTaskManager(true);
+    // disableTaskManager(true);
     keyHook =SetWindowsHookEx(WH_KEYBOARD_LL,keyProc,GetModuleHandle(NULL),0);
     mouseHook =SetWindowsHookEx( WH_MOUSE_LL,mouseProc,GetModuleHandle(NULL),0);
 }
