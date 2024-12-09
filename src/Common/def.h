@@ -11,6 +11,7 @@ inline const char* const KEY_CONTACT_HINT = "contact_hint";
 inline const char* const KEY_CONTACT_INFO = "contact_info";
 inline const char* const KEY_QRCODE = "qrcode";
 inline const char* const KEY_BACKGROUND_COLOR = "background_color";
+inline const char* const KEY_FONT_COLOR = "font_color";
 inline const char* const KEY_PROGRESS_TIME = "progress_time";
 inline const char* const KEY_HOT_KEY = "hot_key";
 inline const char* const KEY_EXEC_CMD = "execute_cmd";
@@ -59,6 +60,7 @@ struct AppInfoModel
         mHotKey = "ctrl+alt+d";
         progressTime = 10;
         progressSuffix = "complete";
+        cmd = "rundll32.exe user32.dll,LockWorkStation";
     }
 };
 

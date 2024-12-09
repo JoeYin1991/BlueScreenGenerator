@@ -35,6 +35,7 @@ void AppInfo::save()
     settings.setValue(KEY_QRCODE, model.mQrcodePath);
 
     settings.setValue(KEY_BACKGROUND_COLOR, QString("%1,%2,%3").arg(model.mBgColor.red()).arg(model.mBgColor.green()).arg(model.mBgColor.blue()));
+    settings.setValue(KEY_FONT_COLOR, QString("%1,%2,%3").arg(model.mFontColor.red()).arg(model.mFontColor.green()).arg(model.mFontColor.blue()));
     settings.setValue(KEY_PROGRESS_TIME, model.progressTime);
     settings.setValue(KEY_HOT_KEY, model.mHotKey);
     settings.setValue(KEY_EXEC_CMD, model.cmd);
@@ -112,6 +113,10 @@ void AppInfo::loadConfig()
     QStringList colorList = settings.value(KEY_BACKGROUND_COLOR).toString().split(",");
     if (colorList.size() == 3) {
         model.mBgColor = QColor(colorList[0].toUInt(), colorList[1].toUInt(), colorList[2].toUInt());
+    }
+    colorList = settings.value(KEY_FONT_COLOR).toString().split(",");
+    if (colorList.size() == 3) {
+        model.mFontColor = QColor(colorList[0].toUInt(), colorList[1].toUInt(), colorList[2].toUInt());
     }
     model.progressTime = settings.value(KEY_PROGRESS_TIME).toUInt();
     model.mHotKey = settings.value(KEY_HOT_KEY).toString();

@@ -22,6 +22,7 @@ class QTextEdit;
 class QLabel;
 class QToolButton;
 class OneKeySequenceEdit;
+class QButtonGroup;
 class SettingDialog : public QDialog
 {
     Q_OBJECT
@@ -42,6 +43,12 @@ private:
     void initContactHintWgtUi(QWidget *parent);
     void initContactInfoWgtUi(QWidget *parent);
 
+    void initLogoWgtUi();
+    void initLogoExePathWgtUi(QWidget *parent, QButtonGroup *radioGroup);
+    void initLogoExePidWgtUi(QWidget *parent, QButtonGroup *radioGroup);
+    void initLogoImgWgtUi(QWidget *parent, QButtonGroup *radioGroup);
+    void initLogoPrevUi(QWidget *parent);
+
     void initSettingWgtUi();
     void initSettingBgWgtUi(QWidget *parent);
     void initSettingProgressWgtUi(QWidget *parent);
@@ -61,10 +68,13 @@ protected:
     bool eventFilter(QObject *o, QEvent *e) override;
 
 private slots:
-    void slotClickEmojiRadioBtn();
-    void slotClickBgScanBtn();
-    void slotClickBuildBtn();
-    void slotClickResetBtn();
+    void slotEmojiRadioBtnClicked();
+    void slotIconRadioBtnClicked();
+    void slotIconFromPidLEEditFinished();
+    void slotBgScanBtnClicked();
+    void slotFontScanBtnClicked();
+    void slotBuildBtnClicked();
+    void slotResetBtnClicked();
 private:
     QScrollArea             *mScrollArea = nullptr;
     QVBoxLayout             *mMainLayout = nullptr;
@@ -88,9 +98,26 @@ private:
     QLabel                  *mCttInfoLbl = nullptr;
     QTextEdit               *mCttInfoTE = nullptr;
 
+    QWidget                 *mLogoWgt = nullptr;
+    QRadioButton            *mLogoFromExePathRB = nullptr;
+    QLineEdit               *mLogoExePathLE = nullptr;
+    QToolButton             *mLogoExePathScanBtn = nullptr;
+    QRadioButton            *mLogoFromExePidRB = nullptr;
+    QLineEdit               *mLogoExePidLE = nullptr;
+    QRadioButton            *mLogoFromImgRB = nullptr;
+    QLineEdit               *mLogoImgPathLE = nullptr;
+    QToolButton             *mLogoImgPathScanBtn = nullptr;
+    QLabel                  *mLogoIcoLbl = nullptr;
+    QLabel                  *mLogoIcoPrevLbl = nullptr;
+
     QWidget                 *mSettingWgt = nullptr;
     QLabel                  *mBgLbl = nullptr;
     QToolButton             *mBgScanBtn = nullptr;
+    QLabel                  *mFontLbl = nullptr;
+    QToolButton             *mFontScanBtn = nullptr;
+    QLabel                  *mLogoLbl = nullptr;
+    QLineEdit               *mLogoLE = nullptr;
+    QToolButton             *mLogoScanBtn = nullptr;
     QLabel                  *mProgressLbl = nullptr;
     QLineEdit               *mProgressLE = nullptr;
     QLabel                  *mHotKeyLbl = nullptr;

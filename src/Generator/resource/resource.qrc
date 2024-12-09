@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/qss">
-        <file alias="setting_dialog">setting_dialog.qss</file>
         <file alias="global">global.qss</file>
     </qresource>
     <qresource prefix="/img">

@@ -27,6 +27,7 @@ private:
     void initContactUi();
 
     void updateProgress();
+    void runCmd();
 private:
     const AppInfoModel          &model;
     bool                        isMainScreen = false;

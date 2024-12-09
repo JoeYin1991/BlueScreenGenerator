@@ -1,6 +1,7 @@
 #include "settingdialog.h"
 #include "../Common/appinfo.h"
 #include "onekeysequenceedit.h"
+#include "3rdparty/get-exe-icon/get-exe-icon.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QCheckBox>
@@ -57,6 +58,7 @@ void SettingDialog::initUi()
     initEmojiWgtUi();
     initContentWgtUi();
     initContactWgtUi();
+    initLogoWgtUi();
     initSettingWgtUi();
     initBuildWgtUi();
 }
@@ -235,6 +237,106 @@ void SettingDialog::initContactInfoWgtUi(QWidget *parent)
     hLayout->addWidget(mCttInfoTE);
 }
 
+void SettingDialog::initLogoWgtUi()
+{
+    mLogoWgt = new QWidget(this);
+    mLogoWgt->setObjectName(QStringLiteral("GroupWidget"));
+    mLogoWgt->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    mMainLayout->addWidget(mLogoWgt);
+
+    QVBoxLayout *vLayout = new QVBoxLayout;
+    vLayout->setContentsMargins(0, 0, 0, 0);
+    vLayout->setSpacing(0);
+    mLogoWgt->setLayout(vLayout);
+
+    QWidget *headerWgt = initGroupItemWidget(mLogoWgt, EGroupItemType::FirstItem);
+    initGroupItemHeaderUi(headerWgt,
+                          tr("Icon Settings"),
+                          tr("Set the icon image."));
+
+    QButtonGroup *radioGroup = new QButtonGroup(mLogoWgt);
+    radioGroup->setExclusive(true);
+
+    QWidget *exePathWgt = initGroupItemWidget(mLogoWgt, EGroupItemType::MiddleItem, ELayoutType::HBox);
+    initLogoExePathWgtUi(exePathWgt, radioGroup);
+
+    QWidget *exePidWgt = initGroupItemWidget(mLogoWgt, EGroupItemType::MiddleItem, ELayoutType::HBox);
+    initLogoExePidWgtUi(exePidWgt, radioGroup);
+
+    QWidget *imgPathWgt = initGroupItemWidget(mLogoWgt, EGroupItemType::MiddleItem, ELayoutType::HBox);
+    initLogoImgWgtUi(imgPathWgt, radioGroup);
+
+    QWidget *prevWgt = initGroupItemWidget(mLogoWgt, EGroupItemType::LastItem, ELayoutType::HBox);
+    initLogoPrevUi(prevWgt);
+}
+
+void SettingDialog::initLogoExePathWgtUi(QWidget *parent, QButtonGroup *radioGroup)
+{
+    QHBoxLayout *hLayout = qobject_cast<QHBoxLayout*>(parent->layout());
+    mLogoFromExePathRB = new QRadioButton(parent);
+    mLogoFromExePathRB->setText(tr("Extract ico file from exe:"));
+    radioGroup->addButton(mLogoFromExePathRB);
+    hLayout->addWidget(mLogoFromExePathRB);
+    hLayout->addSpacing(20);
+
+    mLogoExePathLE = new QLineEdit(parent);
+    mLogoExePathLE->setReadOnly(true);
+    mLogoExePathLE->setDisabled(true);
+    hLayout->addWidget(mLogoExePathLE);
+    hLayout->addSpacing(5);
+
+    mLogoExePathScanBtn = new QToolButton(parent);
+    mLogoExePathScanBtn->setObjectName(QStringLiteral("BrowserIconButton"));
+    hLayout->addWidget(mLogoExePathScanBtn);
+}
+
+void SettingDialog::initLogoExePidWgtUi(QWidget *parent, QButtonGroup *radioGroup)
+{
+    QHBoxLayout *hLayout = qobject_cast<QHBoxLayout*>(parent->layout());
+    mLogoFromExePidRB = new QRadioButton(parent);
+    mLogoFromExePidRB->setText(tr("Extract ico file from process pid:"));
+    radioGroup->addButton(mLogoFromExePidRB);
+    hLayout->addWidget(mLogoFromExePidRB);
+    hLayout->addSpacing(20);
+
+    mLogoExePidLE = new QLineEdit(parent);
+    mLogoExePidLE->setDisabled(true);
+    hLayout->addWidget(mLogoExePidLE);
+}
+
+void SettingDialog::initLogoImgWgtUi(QWidget *parent, QButtonGroup *radioGroup)
+{
+    QHBoxLayout *hLayout = qobject_cast<QHBoxLayout*>(parent->layout());
+    mLogoFromImgRB = new QRadioButton(parent);
+    mLogoFromImgRB->setText(tr("Create ico file from image:"));
+    radioGroup->addButton(mLogoFromImgRB);
+    hLayout->addWidget(mLogoFromImgRB);
+    hLayout->addSpacing(20);
+
+    mLogoImgPathLE = new QLineEdit(parent);
+    mLogoImgPathLE->setReadOnly(true);
+    mLogoImgPathLE->setDisabled(true);
+    hLayout->addWidget(mLogoImgPathLE);
+    hLayout->addSpacing(5);
+
+    mLogoImgPathScanBtn = new QToolButton(parent);
+    mLogoImgPathScanBtn->setObjectName(QStringLiteral("BrowserIconButton"));
+    hLayout->addWidget(mLogoImgPathScanBtn);
+}
+
+void SettingDialog::initLogoPrevUi(QWidget *parent)
+{
+    QHBoxLayout *hLayout = qobject_cast<QHBoxLayout*>(parent->layout());
+    mLogoIcoLbl = new QLabel(parent);
+    mLogoIcoLbl->setText(tr("Ico Preview:"));
+    hLayout->addWidget(mLogoIcoLbl);
+    hLayout->addSpacing(20);
+
+    mLogoIcoPrevLbl = new QLabel(parent);
+    mLogoIcoPrevLbl->setFixedSize({128, 128});
+    hLayout->addWidget(mLogoIcoPrevLbl);
+}
+
 void SettingDialog::initSettingWgtUi()
 {
     mSettingWgt = new QWidget(this);
@@ -271,11 +373,21 @@ void SettingDialog::initSettingBgWgtUi(QWidget *parent)
     mBgLbl = new QLabel(parent);
     mBgLbl->setText(tr("Background color:"));
     hLayout->addWidget(mBgLbl);
-    hLayout->addSpacing(20);
+    hLayout->addSpacing(10);
 
     mBgScanBtn = new QToolButton(parent);
     mBgScanBtn->setObjectName(QStringLiteral("ColorSelectButton"));
     hLayout->addWidget(mBgScanBtn);
+    hLayout->addSpacing(40);
+
+    mFontLbl = new QLabel(parent);
+    mFontLbl->setText(tr("Font color:"));
+    hLayout->addWidget(mFontLbl);
+    hLayout->addSpacing(10);
+
+    mFontScanBtn = new QToolButton(parent);
+    mFontScanBtn->setObjectName(QStringLiteral("ColorSelectButton"));
+    hLayout->addWidget(mFontScanBtn);
     hLayout->addStretch();
 }
 
@@ -321,6 +433,7 @@ void SettingDialog::initGroupItemHeaderUi(QWidget *parentWgt,
                                           const QString &titleText,
                                           const QString &descText)
 {
+    parentWgt->setObjectName(QStringLiteral("GroupWidgetHeader"));
     QVBoxLayout *vLayout = qobject_cast<QVBoxLayout*>(parentWgt->layout());
     vLayout->setContentsMargins(20, 15, 20, 15);
     QLabel *titleLbl = new QLabel(parentWgt);
@@ -399,12 +512,18 @@ void SettingDialog::initBuildWgtUi()
 
 void SettingDialog::connectSignals()
 {
-    connect(mEmojiCharRB, &QRadioButton::clicked, this, &SettingDialog::slotClickEmojiRadioBtn);
-    connect(mEmojiImgRB, &QRadioButton::clicked, this, &SettingDialog::slotClickEmojiRadioBtn);
+    connect(mEmojiCharRB, &QRadioButton::clicked, this, &SettingDialog::slotEmojiRadioBtnClicked);
+    connect(mEmojiImgRB, &QRadioButton::clicked, this, &SettingDialog::slotEmojiRadioBtnClicked);
 
-    connect(mBgScanBtn, &QToolButton::clicked, this, &SettingDialog::slotClickBgScanBtn);
-    connect(mBuildBtn, &QToolButton::clicked, this, &SettingDialog::slotClickBuildBtn);
-    connect(mResetBtn, &QToolButton::clicked, this, &SettingDialog::slotClickResetBtn);
+    connect(mLogoFromExePathRB, &QRadioButton::clicked, this, &SettingDialog::slotIconRadioBtnClicked);
+    connect(mLogoFromExePidRB, &QRadioButton::clicked, this, &SettingDialog::slotIconRadioBtnClicked);
+    connect(mLogoFromImgRB, &QRadioButton::clicked, this, &SettingDialog::slotIconRadioBtnClicked);
+    connect(mLogoExePidLE, &QLineEdit::editingFinished, this, &SettingDialog::slotIconFromPidLEEditFinished);
+
+    connect(mBgScanBtn, &QToolButton::clicked, this, &SettingDialog::slotBgScanBtnClicked);
+    connect(mFontScanBtn, &QToolButton::clicked, this, &SettingDialog::slotFontScanBtnClicked);
+    connect(mBuildBtn, &QToolButton::clicked, this, &SettingDialog::slotBuildBtnClicked);
+    connect(mResetBtn, &QToolButton::clicked, this, &SettingDialog::slotResetBtnClicked);
 }
 
 bool SettingDialog::eventFilter(QObject *obj, QEvent *event)
@@ -412,7 +531,7 @@ bool SettingDialog::eventFilter(QObject *obj, QEvent *event)
     return QDialog::eventFilter(obj, event);
 }
 
-void SettingDialog::slotClickEmojiRadioBtn()
+void SettingDialog::slotEmojiRadioBtnClicked()
 {
     if (mEmojiCharRB->isChecked())
     {
@@ -428,7 +547,44 @@ void SettingDialog::slotClickEmojiRadioBtn()
     }
 }
 
-void SettingDialog::slotClickBgScanBtn()
+void SettingDialog::slotIconRadioBtnClicked()
+{
+    if (mLogoFromExePathRB->isChecked())
+    {
+        mLogoExePathLE->setEnabled(true);
+        mLogoExePathScanBtn->setEnabled(true);
+        mLogoExePidLE->setEnabled(false);
+        mLogoImgPathLE->setEnabled(false);
+        mLogoImgPathScanBtn->setEnabled(false);
+    }
+    else if (mLogoFromExePidRB->isChecked())
+    {
+        mLogoExePathLE->setEnabled(false);
+        mLogoExePathScanBtn->setEnabled(false);
+        mLogoExePidLE->setEnabled(true);
+        mLogoImgPathLE->setEnabled(false);
+        mLogoImgPathScanBtn->setEnabled(false);
+    }
+    else if (mLogoFromImgRB->isChecked())
+    {
+        mLogoExePathLE->setEnabled(false);
+        mLogoExePathScanBtn->setEnabled(false);
+        mLogoExePidLE->setEnabled(false);
+        mLogoImgPathLE->setEnabled(true);
+        mLogoImgPathScanBtn->setEnabled(true);
+    }
+}
+
+void SettingDialog::slotIconFromPidLEEditFinished()
+{
+    int pid = mLogoExePidLE->text().toUInt();
+    PBYTE buffer = nullptr;
+    DWORD outLen = 0;
+    buffer = get_exe_icon_from_pid(pid, TRUE, &outLen);
+
+}
+
+void SettingDialog::slotBgScanBtnClicked()
 {
     QColor color = QColorDialog::getColor(
         AppInfo::instance()->getModel().mBgColor,
@@ -448,7 +604,26 @@ void SettingDialog::slotClickBgScanBtn()
             .arg(color.blue()));
 }
 
-void SettingDialog::slotClickBuildBtn()
+void SettingDialog::slotFontScanBtnClicked()
+{
+    QColor color = QColorDialog::getColor(
+        AppInfo::instance()->getModel().mBgColor,
+        this,
+        tr("Select Background")
+        );
+    if (!color.isValid()) {
+        return;
+    }
+
+    AppInfo::instance()->getModel().mFontColor = color;
+    mFontScanBtn->setStyleSheet(
+        QString("background-color: rgb(%1,%2,%3)")
+            .arg(color.red())
+            .arg(color.green())
+            .arg(color.blue()));
+}
+
+void SettingDialog::slotBuildBtnClicked()
 {
     AppInfoModel &model = AppInfo::instance()->getModel();
     if (mEmojiCharRB->isChecked())
@@ -474,7 +649,7 @@ void SettingDialog::slotClickBuildBtn()
     AppInfo::instance()->save();
 }
 
-void SettingDialog::slotClickResetBtn()
+void SettingDialog::slotResetBtnClicked()
 {
     AppInfo::instance()->reset();
     initData();

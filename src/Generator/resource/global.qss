@@ -33,6 +33,12 @@ QDialog {
     background-color: transparent;
 }
 
+#GroupWidgetHeader {
+    background-color: #e4e6eb;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
 #GroupWidgetHeaderTitle {
     font-size: 20px;
     color: #1b1b1b;

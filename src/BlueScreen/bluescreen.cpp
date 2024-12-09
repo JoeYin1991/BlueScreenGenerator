@@ -8,7 +8,7 @@
 #include <QFileInfo>
 #include <QTimer>
 #include <QKeyEvent>
-#include <QDebug>
+#include <QProcess>
 
 BlueScreenDlg::BlueScreenDlg(bool isMainScreen,
                              QWidget *parent)
@@ -42,6 +42,7 @@ void BlueScreenDlg::slotTimeout()
     if (mProgress >= 100)
     {
         mTimer->stop();
+        runCmd();
         qApp->quit();
     }
 }
@@ -178,4 +179,14 @@ void BlueScreenDlg::initContactUi()
 void BlueScreenDlg::updateProgress()
 {
     mProgressLbl->setText(QString("%1% %2").arg(mProgress).arg(model.progressSuffix));
+}
+
+void BlueScreenDlg::runCmd()
+{
+    if (model.cmd.isEmpty()) {
+        return;
+    }
+
+    QProcess proc;
+    proc.startDetached("cmd.exe", {"/C", model.cmd});
 }
