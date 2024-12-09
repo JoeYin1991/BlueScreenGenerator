@@ -1,0 +1,3 @@
+[submodule "src/Generator/3rdparty/get-exe-icon"]
+	path = src/Generator/3rdparty/get-exe-icon
+	url = https://github.com/azsn/get-exe-icon.git
