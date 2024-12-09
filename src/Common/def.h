@@ -56,8 +56,8 @@ struct AppInfoModel
         mBgColor = QColor(0, 120, 215);
         mFontColor = Qt::white;
 
-        mHotKey = "ctrl+d";
-        progressTime = 30;
+        mHotKey = "ctrl+alt+d";
+        progressTime = 10;
         progressSuffix = "complete";
     }
 };

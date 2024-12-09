@@ -26,43 +26,64 @@ LRESULT CALLBACK keyProc(int nCode,WPARAM wParam,LPARAM lParam )
     KBDLLHOOKSTRUCT *pkbhs = (KBDLLHOOKSTRUCT *) lParam;
     if(nCode == HC_ACTION)
     {
-        // if(pkbhs->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL)& 0x8000 && GetAsyncKeyState(VK_SHIFT)&0x8000){
-        //     qDebug() << "Ctrl+Shift+Esc";
-        // }else if(pkbhs->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL) & 0x8000){
-        //     qDebug() << "Ctrl+Esc";
-        // }else if(pkbhs->vkCode == VK_TAB && pkbhs->flags & LLKHF_ALTDOWN){
-        //     qDebug() << "Alt+Tab";
-        // }else if(pkbhs->vkCode == VK_ESCAPE && pkbhs->flags &LLKHF_ALTDOWN){
-        //     qDebug() << "Alt+Esc";
-        // }else if(pkbhs->vkCode == VK_LWIN || pkbhs->vkCode == VK_RWIN){
-        //     qDebug() << "LWIN/RWIN";
-        // }else if(pkbhs->vkCode == VK_F4 && pkbhs->flags & LLKHF_ALTDOWN){
-        //     qDebug() << "Alt+F4";
-        // }
-        if(AppInfo::instance()->isHotKeyPressed(pkbhs))
-        {
+        if(AppInfo::instance()->isHotKeyPressed(pkbhs)) {
             qApp->quit();
         }
+        bool needDisabled = false;
+        if(pkbhs->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL) & 0x8000 && GetAsyncKeyState(VK_SHIFT)&0x8000){
+            // "Ctrl+Shift+Esc";
+            needDisabled = true;
+        }
+        if(pkbhs->vkCode == VK_ESCAPE) {
+            // "Esc"
+            needDisabled = true;
+        }
+        if(pkbhs->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL) & 0x8000){
+            // "Ctrl+Esc";
+            needDisabled = true;
+        }
+        if(pkbhs->vkCode == VK_TAB && GetAsyncKeyState(VK_MENU) & 0x8000){
+            // "Alt+Tab";
+            needDisabled = true;
+        }
+        if(pkbhs->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_MENU) & 0x8000){
+            // "Alt+Esc";
+            needDisabled = true;
+        }
+        if(pkbhs->vkCode == VK_LWIN || pkbhs->vkCode == VK_RWIN){
+            // "LWIN/RWIN";
+            needDisabled = true;
+        }
+        if(pkbhs->vkCode == VK_F4 && GetAsyncKeyState(VK_MENU) & 0x8000){
+            // "Alt+F4";
+            needDisabled = true;
+        }
+        if (needDisabled) {
+            return 1;
+        }
+
     }
-    return 1;
-    // return CallNextHookEx(keyHook, nCode, wParam, lParam);
+    return CallNextHookEx(keyHook, nCode, wParam, lParam);
 }
 
 LRESULT CALLBACK mouseProc(int nCode,WPARAM wParam,LPARAM lParam )
 {
+    (void)nCode;
+    (void)wParam;
+    (void)lParam;
     return 1;
 }
 
 void unHook()
 {
-    // disableTaskManager(false);
+    disableTaskManager(false);
     UnhookWindowsHookEx(keyHook);
     UnhookWindowsHookEx(mouseHook);
 }
 
 void setHook()
 {
-    // disableTaskManager(true);
+    disableTaskManager(true);
     keyHook =SetWindowsHookEx(WH_KEYBOARD_LL,keyProc,GetModuleHandle(NULL),0);
     mouseHook =SetWindowsHookEx( WH_MOUSE_LL,mouseProc,GetModuleHandle(NULL),0);
 }
@@ -99,12 +120,13 @@ int main(int argc, char *argv[])
     setHook();
     ShowCursor(false);
     int numbers = GetSystemMetrics(SM_CMONITORS);
-    QVector<BlueScreenDlg*> dlgVec;
     for (int i = 0; i < numbers; ++i) {
         auto rc = GetScreenRect(i);
         bool isMainScreen = rc.x() == 0 && rc.y() == 0;
+        if (!isMainScreen) {
+            continue;
+        }
         BlueScreenDlg *dlg = new BlueScreenDlg(isMainScreen);
-        dlgVec.append(dlg);
         dlg->show();
         SetWindowPos(reinterpret_cast<HWND>(dlg->winId()), HWND_TOPMOST, rc.x(), rc.y(), rc.width(), rc.height(), NULL);
     }

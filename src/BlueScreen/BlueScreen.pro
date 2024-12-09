@@ -16,7 +16,8 @@ SOURCES += \
 HEADERS += \
     ../Common/def.h \
     ../Common/appinfo.h \
-    bluescreen.h
+    ../Common/qkeyWinVcode.h \
+    bluescreen.h \
 
 LIBS += \
     User32.lib

@@ -1,4 +1,5 @@
 #include "appinfo.h"
+#include "qkeyWinVcode.h"
 #include <QColor>
 #include <QCoreApplication>
 #include <QSettings>
@@ -6,6 +7,8 @@
 #include <QFileInfo>
 #include <QKeySequence>
 #include <QDebug>
+
+constexpr int keyMask = ~(Qt::META | Qt::CTRL | Qt::ALT | Qt::SHIFT);
 
 AppInfo *AppInfo::instance()
 {
@@ -45,28 +48,31 @@ void AppInfo::reset()
 bool AppInfo::isHotKeyPressed(KBDLLHOOKSTRUCT *pkbhs)
 {
     QStringList hotkeys = model.mHotKey.toLower().split("+");
-    do
+    QKeySequence keySeq(model.mHotKey);
+    for(int i = 0; i < keySeq.count(); i++)
     {
-        int key = QKeySequence(model.mHotKey)[hotkeys.count()];
-        qInfo() << (int)pkbhs->vkCode << " " << key;
-        if (hotkeys.contains("ctrl") && !(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
-            break;
-        }
-        if (hotkeys.contains("shift") && !(GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
-            break;
-        }
-        if (hotkeys.contains("alt") && !(GetAsyncKeyState(VK_MENU) & 0x8000)) {
-            break;
-        }
-        if (hotkeys.contains("meta") && !(GetAsyncKeyState(VK_LWIN) & 0x8000) && !(GetAsyncKeyState(VK_RWIN) & 0x8000)) {
-            break;
-        }
-        // int key = QKeySequence(model.mHotKey)[hotkeys.count()];
-        // qInfo() << (int)pkbhs->vkCode << " " << key;
-        if (pkbhs->vkCode == key) {
-            return true;
-        }
-    }while(0);
+        int key = keySeq[i];
+        Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(key & ~keyMask);
+        Qt::Key singleKey = static_cast<Qt::Key>(key & keyMask);
+        do
+        {
+            if (modifiers & Qt::ControlModifier && !(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
+                break;
+            }
+            if (modifiers & Qt::ShiftModifier && !(GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
+                break;
+            }
+            if (modifiers & Qt::AltModifier && !(GetAsyncKeyState(VK_MENU) & 0x8000)) {
+                break;
+            }
+            if (modifiers & Qt::MetaModifier  && !(GetAsyncKeyState(VK_LWIN) & 0x8000) && !(GetAsyncKeyState(VK_RWIN) & 0x8000)) {
+                break;
+            }
+            if (qtKey2WinCodeMap.at(singleKey) == pkbhs->vkCode) {
+                return true;
+            }
+        } while(0);
+    }
 
     return false;
 }
