@@ -20,10 +20,14 @@
 #include <QKeySequenceEdit>
 #include <QCoreApplication>
 #include <QFile>
+#include <QFileInfo>
 #include <QEvent>
+#include <QDir>
+#include <QtWin>
 
 SettingDialog::SettingDialog(QWidget *parent)
     : QDialog(parent)
+    , tempIcoPath(QCoreApplication::applicationDirPath()+"/tempico.ico")
 {
     initUi();
     connectSignals();
@@ -269,6 +273,7 @@ void SettingDialog::initLogoWgtUi()
     initLogoImgWgtUi(imgPathWgt, radioGroup);
 
     QWidget *prevWgt = initGroupItemWidget(mLogoWgt, EGroupItemType::LastItem, ELayoutType::HBox);
+    prevWgt->setStyleSheet("#GroupLastItemWidget{min-height:80px;max-height:80px;}");
     initLogoPrevUi(prevWgt);
 }
 
@@ -335,8 +340,12 @@ void SettingDialog::initLogoPrevUi(QWidget *parent)
     hLayout->addSpacing(20);
 
     mLogoIcoPrevLbl = new QLabel(parent);
-    mLogoIcoPrevLbl->setFixedSize({128, 128});
+    mLogoIcoPrevLbl->setObjectName(QStringLiteral("IcoPreviewLabel"));
+    mLogoIcoPrevLbl->setAlignment(Qt::AlignCenter);
     hLayout->addWidget(mLogoIcoPrevLbl);
+    hLayout->addStretch();
+
+    parent->setMinimumHeight(90);
 }
 
 void SettingDialog::initSettingWgtUi()
@@ -528,6 +537,25 @@ void SettingDialog::connectSignals()
     connect(mResetBtn, &QToolButton::clicked, this, &SettingDialog::slotResetBtnClicked);
 }
 
+void SettingDialog::updateIcoPreview(bool isDelete)
+{
+    if (!isDelete) {
+        int cx = GetSystemMetrics(SM_CXICON);
+        int cy = GetSystemMetrics(SM_CYICON);
+        HICON hIcon = (HICON)LoadImage(0, L"D:\\study\\personal\\BlueScreenGenerator\\build\\src\\Generator\\debug\\tempico.ico", IMAGE_ICON, cx, cy, LR_LOADFROMFILE);
+        QPixmap pixmap = QtWin::fromHICON(hIcon);
+        if (pixmap.isNull()) {
+            mLogoIcoPrevLbl->clear();
+        } else {
+            mLogoIcoPrevLbl->setPixmap(pixmap);
+        }
+    }
+    else
+    {
+        mLogoIcoPrevLbl->clear();
+    }
+}
+
 bool SettingDialog::eventFilter(QObject *obj, QEvent *event)
 {
     return QDialog::eventFilter(obj, event);
@@ -579,20 +607,28 @@ void SettingDialog::slotIconRadioBtnClicked()
 
 void SettingDialog::slotIconFromPidLEEditFinished()
 {
-    int pid = mLogoExePidLE->text().toUInt();
+    static int pid = 0;
+    int newPid = mLogoExePidLE->text().toUInt();
+    if (pid == newPid) {
+        return;
+    }
+    pid = newPid;
     PBYTE buffer = nullptr;
     DWORD outLen = 0;
     buffer = get_exe_icon_from_pid(pid, TRUE, &outLen);
-    if (buffer != nullptr)
+    if (buffer != nullptr && outLen != 0)
     {
-        QString path = QCoreApplication::applicationDirPath() + "/temp.ico";
-        QFile outFile(path);
+        QFile outFile(tempIcoPath);
         if (!outFile.open(QIODevice::WriteOnly)) {
             return;
         }
         outFile.write((char*)buffer, outLen);
         outFile.close();
-        qInfo() << path << " write finished!";
+        updateIcoPreview();
+    }
+    else
+    {
+        updateIcoPreview(true);
     }
 }
 

@@ -64,6 +64,8 @@ private:
 
     void initBuildWgtUi();
     void connectSignals();
+
+    void updateIcoPreview(bool isDelete = false);
 protected:
     bool eventFilter(QObject *o, QEvent *e) override;
 
@@ -128,5 +130,7 @@ private:
     QWidget                 *mBuildWgt = nullptr;
     QToolButton             *mBuildBtn = nullptr;
     QToolButton             *mResetBtn = nullptr;
+
+    const QString           tempIcoPath;
 };
 #endif // SETTINGDIALOG_H
