@@ -10,7 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     ../Common/appinfo.cpp \
-    3rdparty/get-exe-icon/get-exe-icon.c \
+    ../3rdparty/get-exe-icon/get-exe-icon.c \
     main.cpp \
     onekeysequenceedit.cpp \
     settingdialog.cpp
@@ -18,7 +18,7 @@ SOURCES += \
 HEADERS += \
     ../Common/def.h \
     ../Common/appinfo.h \
-    3rdparty/get-exe-icon/get-exe-icon.h \
+    ../3rdparty/get-exe-icon/get-exe-icon.h \
     onekeysequenceedit.h \
     settingdialog.h
 

@@ -1,7 +1,7 @@
 #include "settingdialog.h"
 #include "../Common/appinfo.h"
 #include "onekeysequenceedit.h"
-#include "3rdparty/get-exe-icon/get-exe-icon.h"
+#include "../3rdparty/get-exe-icon/get-exe-icon.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QCheckBox>
@@ -18,6 +18,8 @@
 #include <QToolButton>
 #include <QColorDialog>
 #include <QKeySequenceEdit>
+#include <QCoreApplication>
+#include <QFile>
 #include <QEvent>
 
 SettingDialog::SettingDialog(QWidget *parent)
@@ -581,7 +583,17 @@ void SettingDialog::slotIconFromPidLEEditFinished()
     PBYTE buffer = nullptr;
     DWORD outLen = 0;
     buffer = get_exe_icon_from_pid(pid, TRUE, &outLen);
-
+    if (buffer != nullptr)
+    {
+        QString path = QCoreApplication::applicationDirPath() + "/temp.ico";
+        QFile outFile(path);
+        if (!outFile.open(QIODevice::WriteOnly)) {
+            return;
+        }
+        outFile.write((char*)buffer, outLen);
+        outFile.close();
+        qInfo() << path << " write finished!";
+    }
 }
 
 void SettingDialog::slotBgScanBtnClicked()
