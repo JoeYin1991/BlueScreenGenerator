@@ -19,11 +19,34 @@
 #include <QColorDialog>
 #include <QKeySequenceEdit>
 #include <QCoreApplication>
+#include <QFileDialog>
 #include <QFile>
 #include <QFileInfo>
+#include <QComboBox>
 #include <QEvent>
 #include <QDir>
 #include <QtWin>
+#include <QListView>
+
+const QMap<EExecCmdType, QString> cmdNameMap = {
+    {EExecCmdType::NoCmd, QObject::tr("None")},
+    {EExecCmdType::LockScreen, QObject::tr("Lock Screen")},
+    {EExecCmdType::Logoff, QObject::tr("Log Off")},
+    {EExecCmdType::Shutdown, QObject::tr("Shutdown")},
+    {EExecCmdType::Reboot, QObject::tr("Reboot")},
+    {EExecCmdType::Sleep, QObject::tr("Sleep")},
+    {EExecCmdType::Custom, QObject::tr("Custom")}
+};
+
+const QMap<EExecCmdType, QString> cmdMap = {
+    {EExecCmdType::NoCmd, ""},
+    {EExecCmdType::LockScreen, "rundll32.exe user32.dll,LockWorkStation"},
+    {EExecCmdType::Logoff, "logoff"},
+    {EExecCmdType::Shutdown, "shutdown /s /f /t 0"},
+    {EExecCmdType::Reboot, "shutdown /r /f /t 0"},
+    {EExecCmdType::Sleep, "rundll32.exe powrprof.dll,SetSuspendState 0,1,0"},
+    {EExecCmdType::Custom, ""}
+};
 
 SettingDialog::SettingDialog(QWidget *parent)
     : QDialog(parent)
@@ -59,7 +82,6 @@ void SettingDialog::initUi()
     mMainLayout->setContentsMargins(30, 30, 30, 30);
     mMainLayout->setSpacing(5);
     mainWgt->setLayout(mMainLayout);
-
 
     initEmojiWgtUi();
     initContentWgtUi();
@@ -373,9 +395,9 @@ void SettingDialog::initSettingWgtUi()
     QWidget *progressWgt = initGroupItemWidget(mSettingWgt, EGroupItemType::MiddleItem, ELayoutType::HBox);
     initSettingProgressWgtUi(progressWgt);
 
-    QWidget *cmdWgt = initGroupItemWidget(mSettingWgt, EGroupItemType::LastItem, ELayoutType::HBox);
-    cmdWgt->setStyleSheet("#GroupLastItemWidget{min-height:80px;max-height:80px;}");
-    initSettingCmdWgtUi(cmdWgt);
+    mCmdWgt = initGroupItemWidget(mSettingWgt, EGroupItemType::LastItem, ELayoutType::VBox);
+    mCmdWgt->setStyleSheet("#GroupLastItemWidget{min-height:120px;max-height:120px;}");
+    initSettingCmdWgtUi(mCmdWgt);
 }
 
 void SettingDialog::initSettingBgWgtUi(QWidget *parent)
@@ -430,14 +452,26 @@ void SettingDialog::initSettingHotKeyWgtUi(QWidget *parent)
 
 void SettingDialog::initSettingCmdWgtUi(QWidget *parent)
 {
-    QHBoxLayout *hLayout = qobject_cast<QHBoxLayout*>(parent->layout());
+    QVBoxLayout *vLayout = qobject_cast<QVBoxLayout*>(parent->layout());
+    vLayout->setSpacing(10);
+
+    QHBoxLayout *hLayout = new QHBoxLayout;
+    hLayout->setContentsMargins(0, 0, 0, 0);
+    hLayout->setSpacing(10);
+    vLayout->addLayout(hLayout);
     mCmdLbl = new QLabel(parent);
     mCmdLbl->setText(tr("Execute when progress up to 100%:"));
     hLayout->addWidget(mCmdLbl);
-    hLayout->addSpacing(20);
 
+    mCmdCbb = new QComboBox(parent);
+    mCmdCbb->setView(new QListView);
+    hLayout->addWidget(mCmdCbb);
+    for(auto it = cmdNameMap.begin(); it != cmdNameMap.end(); it++) {
+        mCmdCbb->addItem(it.value(), QVariant::fromValue(it.key()));
+    }
     mCmdTE = new QTextEdit(parent);
-    hLayout->addWidget(mCmdTE);
+    mCmdTE->setPlaceholderText(tr("Input custom cmd command."));
+    vLayout->addWidget(mCmdTE);
 }
 
 void SettingDialog::initGroupItemHeaderUi(QWidget *parentWgt,
@@ -530,29 +564,46 @@ void SettingDialog::connectSignals()
     connect(mLogoFromExePidRB, &QRadioButton::clicked, this, &SettingDialog::slotIconRadioBtnClicked);
     connect(mLogoFromImgRB, &QRadioButton::clicked, this, &SettingDialog::slotIconRadioBtnClicked);
     connect(mLogoExePidLE, &QLineEdit::editingFinished, this, &SettingDialog::slotIconFromPidLEEditFinished);
+    connect(mLogoExePathScanBtn, &QToolButton::clicked, this, &SettingDialog::slotIconFromExeScanBtnClicked);
+    connect(mLogoExePathLE, &QLineEdit::textChanged, this, &SettingDialog::slotIconFromExeTextChanged);
+    connect(mLogoImgPathScanBtn, &QToolButton::clicked, this, &SettingDialog::slotIconFromImgScanBtnClicked);
+    connect(mLogoImgPathLE, &QLineEdit::textChanged, this, &SettingDialog::slotIconFromImgTextChanged);
 
     connect(mBgScanBtn, &QToolButton::clicked, this, &SettingDialog::slotBgScanBtnClicked);
     connect(mFontScanBtn, &QToolButton::clicked, this, &SettingDialog::slotFontScanBtnClicked);
     connect(mBuildBtn, &QToolButton::clicked, this, &SettingDialog::slotBuildBtnClicked);
     connect(mResetBtn, &QToolButton::clicked, this, &SettingDialog::slotResetBtnClicked);
+    connect(mCmdCbb, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingDialog::slotCmdTypeIndexChanged);
 }
 
-void SettingDialog::updateIcoPreview(bool isDelete)
+void SettingDialog::updateIcoPreview(PBYTE buffer, DWORD outLen)
 {
-    if (!isDelete) {
-        int cx = GetSystemMetrics(SM_CXICON);
-        int cy = GetSystemMetrics(SM_CYICON);
-        HICON hIcon = (HICON)LoadImage(0, L"D:\\study\\personal\\BlueScreenGenerator\\build\\src\\Generator\\debug\\tempico.ico", IMAGE_ICON, cx, cy, LR_LOADFROMFILE);
-        QPixmap pixmap = QtWin::fromHICON(hIcon);
-        if (pixmap.isNull()) {
-            mLogoIcoPrevLbl->clear();
-        } else {
-            mLogoIcoPrevLbl->setPixmap(pixmap);
+    if (buffer != nullptr && outLen != 0)
+    {
+        QFile outFile(tempIcoPath);
+        if (!outFile.open(QIODevice::WriteOnly)) {
+            return;
         }
+        outFile.write((char*)buffer, outLen);
+        outFile.close();
+        updateIcoPreview(tempIcoPath);
     }
     else
     {
         mLogoIcoPrevLbl->clear();
+    }
+}
+
+void SettingDialog::updateIcoPreview(const QString iconPath)
+{
+    int cx = GetSystemMetrics(SM_CXICON), cy = GetSystemMetrics(SM_CYICON);
+    std::wstring stdIconPath = iconPath.toStdWString();
+    HICON hIcon = (HICON)LoadImage(0, stdIconPath.c_str(), IMAGE_ICON, cx, cy, LR_LOADFROMFILE);
+    QPixmap pixmap = QtWin::fromHICON(hIcon);
+    if (pixmap.isNull()) {
+        mLogoIcoPrevLbl->clear();
+    } else {
+        mLogoIcoPrevLbl->setPixmap(pixmap);
     }
 }
 
@@ -586,6 +637,7 @@ void SettingDialog::slotIconRadioBtnClicked()
         mLogoExePidLE->setEnabled(false);
         mLogoImgPathLE->setEnabled(false);
         mLogoImgPathScanBtn->setEnabled(false);
+        slotIconFromExeTextChanged();
     }
     else if (mLogoFromExePidRB->isChecked())
     {
@@ -594,6 +646,7 @@ void SettingDialog::slotIconRadioBtnClicked()
         mLogoExePidLE->setEnabled(true);
         mLogoImgPathLE->setEnabled(false);
         mLogoImgPathScanBtn->setEnabled(false);
+        slotIconFromPidLEEditFinished();
     }
     else if (mLogoFromImgRB->isChecked())
     {
@@ -602,11 +655,15 @@ void SettingDialog::slotIconRadioBtnClicked()
         mLogoExePidLE->setEnabled(false);
         mLogoImgPathLE->setEnabled(true);
         mLogoImgPathScanBtn->setEnabled(true);
+        slotIconFromImgTextChanged();
     }
 }
 
 void SettingDialog::slotIconFromPidLEEditFinished()
 {
+    if (mLogoExePidLE->text().isEmpty()) {
+        return;
+    }
     static int pid = 0;
     int newPid = mLogoExePidLE->text().toUInt();
     if (pid == newPid) {
@@ -616,20 +673,50 @@ void SettingDialog::slotIconFromPidLEEditFinished()
     PBYTE buffer = nullptr;
     DWORD outLen = 0;
     buffer = get_exe_icon_from_pid(pid, TRUE, &outLen);
-    if (buffer != nullptr && outLen != 0)
-    {
-        QFile outFile(tempIcoPath);
-        if (!outFile.open(QIODevice::WriteOnly)) {
-            return;
-        }
-        outFile.write((char*)buffer, outLen);
-        outFile.close();
-        updateIcoPreview();
+    updateIcoPreview(buffer, outLen);
+}
+
+void SettingDialog::slotIconFromExeScanBtnClicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Extract icon from exe"),
+                                                    "/home",
+                                                    tr("Exe (*.exe)"));
+    if (fileName.isEmpty()) {
+        return;
     }
-    else
-    {
-        updateIcoPreview(true);
+    mLogoExePathLE->setText(fileName);
+}
+
+void SettingDialog::slotIconFromExeTextChanged()
+{
+    if (mLogoExePathLE->text().isEmpty()) {
+        return;
     }
+    PBYTE buffer = nullptr;
+    DWORD outLen = 0;
+    std::string exePath = mLogoExePathLE->text().toStdString();
+    buffer = get_exe_icon_from_file_utf8(exePath.c_str(), TRUE, &outLen);
+    updateIcoPreview(buffer, outLen);
+}
+
+void SettingDialog::slotIconFromImgScanBtnClicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Extract icon from exe"),
+                                                    "/home",
+                                                    tr("ICO (*.ico)"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+    mLogoImgPathLE->setText(fileName);
+}
+
+void SettingDialog::slotIconFromImgTextChanged()
+{
+    QString imgPath = mLogoImgPathLE->text();
+    if (imgPath.isEmpty()) {
+        return;
+    }
+    updateIcoPreview(imgPath);
 }
 
 void SettingDialog::slotBgScanBtnClicked()
@@ -701,4 +788,20 @@ void SettingDialog::slotResetBtnClicked()
 {
     AppInfo::instance()->reset();
     initData();
+}
+
+void SettingDialog::slotCmdTypeIndexChanged(int index)
+{
+    Q_UNUSED(index);
+    EExecCmdType cmdType = (EExecCmdType)mCmdCbb->currentData().toInt();
+    if (cmdType == EExecCmdType::Custom)
+    {
+        mCmdTE->setVisible(true);
+        mCmdWgt->setStyleSheet("#GroupLastItemWidget{min-height:120px;max-height:120px;}");
+    }
+    else
+    {
+        mCmdTE->setVisible(false);
+        mCmdWgt->setStyleSheet("#GroupLastItemWidget{min-height:60px;max-height:60px;}");
+    }
 }

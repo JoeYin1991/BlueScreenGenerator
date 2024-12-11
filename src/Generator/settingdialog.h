@@ -2,6 +2,7 @@
 #define SETTINGDIALOG_H
 
 #include <QDialog>
+#include <Windows.h>
 
 enum class EGroupItemType {
     FirstItem,
@@ -14,6 +15,17 @@ enum class ELayoutType {
     HBox
 };
 
+enum class EExecCmdType {
+    NoCmd,
+    LockScreen,
+    Logoff,
+    Shutdown,
+    Reboot,
+    Sleep,
+    Custom,
+};
+Q_DECLARE_METATYPE(EExecCmdType);
+
 class QScrollArea;
 class QVBoxLayout;
 class QRadioButton;
@@ -21,6 +33,7 @@ class QLineEdit;
 class QTextEdit;
 class QLabel;
 class QToolButton;
+class QComboBox;
 class OneKeySequenceEdit;
 class QButtonGroup;
 class SettingDialog : public QDialog
@@ -65,18 +78,26 @@ private:
     void initBuildWgtUi();
     void connectSignals();
 
-    void updateIcoPreview(bool isDelete = false);
+    void updateIcoPreview(PBYTE buffer, DWORD outLen);
+    void updateIcoPreview(const QString iconPath);
 protected:
     bool eventFilter(QObject *o, QEvent *e) override;
 
 private slots:
     void slotEmojiRadioBtnClicked();
+
     void slotIconRadioBtnClicked();
     void slotIconFromPidLEEditFinished();
+    void slotIconFromExeScanBtnClicked();
+    void slotIconFromExeTextChanged();
+    void slotIconFromImgScanBtnClicked();
+    void slotIconFromImgTextChanged();
+
     void slotBgScanBtnClicked();
     void slotFontScanBtnClicked();
     void slotBuildBtnClicked();
     void slotResetBtnClicked();
+    void slotCmdTypeIndexChanged(int index);
 private:
     QScrollArea             *mScrollArea = nullptr;
     QVBoxLayout             *mMainLayout = nullptr;
@@ -124,7 +145,10 @@ private:
     QLineEdit               *mProgressLE = nullptr;
     QLabel                  *mHotKeyLbl = nullptr;
     OneKeySequenceEdit      *mHotKeyKSE = nullptr;
+
+    QWidget                 *mCmdWgt = nullptr;
     QLabel                  *mCmdLbl = nullptr;
+    QComboBox               *mCmdCbb = nullptr;
     QTextEdit               *mCmdTE = nullptr;
 
     QWidget                 *mBuildWgt = nullptr;
