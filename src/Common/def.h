@@ -5,7 +5,7 @@
 #include <QColor>
 
 inline const char* const KEY_EMOJI_CHAR = "emoji_char";
-inline const char* const KEY_EMOJI_PATH = "emoji_path";
+inline const char* const KEY_EMOJI_PATH = "emoji_name";
 inline const char* const KEY_MAIN_CONTENT = "main_content";
 inline const char* const KEY_CONTACT_HINT = "contact_hint";
 inline const char* const KEY_CONTACT_INFO = "contact_info";
@@ -25,11 +25,11 @@ struct AppInfoModel
 {
     EEmojiType      mEmojiType;
     QString         mEmojiCharacter;
-    QString         mEmojiImgPath;
+    QString         mEmojiImgName;
 
     QString         mMainContent;
 
-    QString         mQrcodePath;
+    QString         mQrcodeName;
     QString         mCttHint;
     QString         mCttInfo;
 
@@ -60,7 +60,7 @@ struct AppInfoModel
         mHotKey = "ctrl+alt+d";
         progressTime = 10;
         progressSuffix = "complete";
-        cmd = "rundll32.exe user32.dll,LockWorkStation";
+        cmd = "";
     }
 };
 

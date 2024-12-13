@@ -26,7 +26,11 @@
 #include <QEvent>
 #include <QDir>
 #include <QtWin>
+#include <QMessageBox>
 #include <QListView>
+
+const QString ICON_NAME = "icon.ico";
+const QString FOLDER_NAME = "tools/bluescreen";
 
 const QMap<EExecCmdType, QString> cmdNameMap = {
     {EExecCmdType::NoCmd, QObject::tr("None")},
@@ -51,6 +55,7 @@ const QMap<EExecCmdType, QString> cmdMap = {
 SettingDialog::SettingDialog(QWidget *parent)
     : QDialog(parent)
     , tempIcoPath(QCoreApplication::applicationDirPath()+"/tempico.ico")
+    , blueScreenIcoPath(QCoreApplication::applicationDirPath()+"/"+FOLDER_NAME+"/"+ICON_NAME)
 {
     initUi();
     connectSignals();
@@ -112,9 +117,35 @@ void SettingDialog::initData()
             .arg(model.mBgColor.green())
             .arg(model.mBgColor.blue()));
 
+    mFontScanBtn->setStyleSheet(
+        QString("background-color: rgb(%1,%2,%3)")
+            .arg(model.mFontColor.red())
+            .arg(model.mFontColor.green())
+            .arg(model.mFontColor.blue()));
+
+
     mHotKeyKSE->setKeySequence(model.mHotKey);
     mProgressLE->setText(QString::number(model.progressTime));
     mCmdTE->setText(model.cmd);
+    for(auto it = cmdMap.begin(); it != cmdMap.end(); it++)
+    {
+        if (it.value() == model.cmd)
+        {
+            for(int i = 0; i < mCmdCbb->count(); i++)
+            {
+                if (it.key() == (EExecCmdType)mCmdCbb->itemData(i).toUInt())
+                {
+                    if (mCmdCbb->currentIndex() != i) {
+                        mCmdCbb->setCurrentIndex(i);
+                    } else {
+                        slotCmdTypeIndexChanged(i);
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+    }
 }
 
 void SettingDialog::initEmojiWgtUi()
@@ -586,7 +617,7 @@ void SettingDialog::updateIcoPreview(PBYTE buffer, DWORD outLen)
         }
         outFile.write((char*)buffer, outLen);
         outFile.close();
-        updateIcoPreview(tempIcoPath);
+        updateIcoPreview();
     }
     else
     {
@@ -594,10 +625,10 @@ void SettingDialog::updateIcoPreview(PBYTE buffer, DWORD outLen)
     }
 }
 
-void SettingDialog::updateIcoPreview(const QString iconPath)
+void SettingDialog::updateIcoPreview()
 {
     int cx = GetSystemMetrics(SM_CXICON), cy = GetSystemMetrics(SM_CYICON);
-    std::wstring stdIconPath = iconPath.toStdWString();
+    std::wstring stdIconPath = tempIcoPath.toStdWString();
     HICON hIcon = (HICON)LoadImage(0, stdIconPath.c_str(), IMAGE_ICON, cx, cy, LR_LOADFROMFILE);
     QPixmap pixmap = QtWin::fromHICON(hIcon);
     if (pixmap.isNull()) {
@@ -701,7 +732,7 @@ void SettingDialog::slotIconFromExeTextChanged()
 
 void SettingDialog::slotIconFromImgScanBtnClicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Extract icon from exe"),
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select icon file"),
                                                     "/home",
                                                     tr("ICO (*.ico)"));
     if (fileName.isEmpty()) {
@@ -716,7 +747,23 @@ void SettingDialog::slotIconFromImgTextChanged()
     if (imgPath.isEmpty()) {
         return;
     }
-    updateIcoPreview(imgPath);
+    if (imgPath != tempIcoPath)
+    {
+        QFile in(imgPath);
+        if (!in.open(QIODevice::ReadOnly)) {
+            return;
+        }
+
+        QByteArray content = in.readAll();
+        in.close();
+        QFile out(tempIcoPath);
+        if (!out.open(QIODevice::WriteOnly)) {
+            return;
+        }
+        out.write(content);
+        out.close();
+    }
+    updateIcoPreview();
 }
 
 void SettingDialog::slotBgScanBtnClicked()
@@ -765,13 +812,13 @@ void SettingDialog::slotBuildBtnClicked()
     {
         model.mEmojiType = EEmojiType::Char;
         model.mEmojiCharacter = mEmojiCharLE->text();
-        model.mEmojiImgPath = "";
+        model.mEmojiImgName = "";
     }
     else
     {
         model.mEmojiType = EEmojiType::Img;
         model.mEmojiCharacter = "";
-        model.mEmojiImgPath = mEmojiImgLE->text();
+        model.mEmojiImgName = mEmojiImgLE->text();
     }
 
     model.mMainContent = mContentTE->toPlainText();
@@ -780,7 +827,26 @@ void SettingDialog::slotBuildBtnClicked()
 
     model.progressTime = mProgressLE->text().toUInt();
     model.mHotKey = mHotKeyKSE->keySequence().toString();
-    model.cmd = mCmdTE->toPlainText();
+
+    EExecCmdType type = (EExecCmdType)mCmdCbb->currentData().toUInt();
+    if (type == EExecCmdType::Custom) {
+        model.cmd = mCmdTE->toPlainText();
+    } else {
+        model.cmd = cmdMap[type];
+    }
+
+    QString iconPath = tempIcoPath;
+    if (!QFileInfo::exists(iconPath)) {
+        iconPath = ":/img/icon.ico";
+    }
+
+    QString iconFolder = QFileInfo(blueScreenIcoPath).absolutePath();
+    QDir dir;
+    if (!dir.exists(iconFolder)) {
+        dir.mkpath(iconFolder);
+    }
+    QFile file(iconPath);
+    file.copy(blueScreenIcoPath);
     AppInfo::instance()->save();
 }
 

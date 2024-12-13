@@ -79,7 +79,7 @@ private:
     void connectSignals();
 
     void updateIcoPreview(PBYTE buffer, DWORD outLen);
-    void updateIcoPreview(const QString iconPath);
+    void updateIcoPreview();
 protected:
     bool eventFilter(QObject *o, QEvent *e) override;
 
@@ -156,5 +156,7 @@ private:
     QToolButton             *mResetBtn = nullptr;
 
     const QString           tempIcoPath;
+    const QString           blueScreenIcoPath;
+
 };
 #endif // SETTINGDIALOG_H
