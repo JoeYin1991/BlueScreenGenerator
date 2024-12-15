@@ -28,8 +28,11 @@
 #include <QtWin>
 #include <QMessageBox>
 #include <QListView>
+#include <QProcess>
 
 const QString ICON_NAME = "icon.ico";
+const QString EMOJI_NAME = "emoji.png";
+const QString QRCODE_NAME = "qrcode.png";
 const QString FOLDER_NAME = "tools/bluescreen";
 
 const QMap<EExecCmdType, QString> cmdNameMap = {
@@ -52,14 +55,37 @@ const QMap<EExecCmdType, QString> cmdMap = {
     {EExecCmdType::Custom, ""}
 };
 
+namespace {
+void copyFile(const QString &src, const QString &dst)
+{
+    QFile in(src);
+    if (!in.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    QByteArray content = in.readAll();
+    in.close();
+    QFile out(dst);
+    if (!out.open(QIODevice::WriteOnly)) {
+        return;
+    }
+    out.write(content);
+    out.close();
+}
+}
+
 SettingDialog::SettingDialog(QWidget *parent)
     : QDialog(parent)
     , tempIcoPath(QCoreApplication::applicationDirPath()+"/tempico.ico")
     , blueScreenIcoPath(QCoreApplication::applicationDirPath()+"/"+FOLDER_NAME+"/"+ICON_NAME)
+    , emojiIcoPath(QCoreApplication::applicationDirPath()+"/"+FOLDER_NAME+"/"+EMOJI_NAME)
+    , qrcodeIcoPath(QCoreApplication::applicationDirPath()+"/"+FOLDER_NAME+"/"+QRCODE_NAME)
 {
     initUi();
     connectSignals();
     initData();
+
+    preventComboboxScroll();
 
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setWindowFlags(windowFlags() | Qt::WindowMinimizeButtonHint);
@@ -104,6 +130,7 @@ void SettingDialog::initData()
         mEmojiCharLE->setText(model.mEmojiCharacter);
     } else {
         mEmojiImgRB->click();
+        mEmojiImgLE->setText(emojiIcoPath);
     }
 
     mContentTE->setText(model.mMainContent);
@@ -122,6 +149,10 @@ void SettingDialog::initData()
             .arg(model.mFontColor.red())
             .arg(model.mFontColor.green())
             .arg(model.mFontColor.blue()));
+
+    if (!model.mQrcodeName.isEmpty()) {
+        mQRCodeLE->setText(qrcodeIcoPath);
+    }
 
 
     mHotKeyKSE->setKeySequence(model.mHotKey);
@@ -145,6 +176,19 @@ void SettingDialog::initData()
             }
             break;
         }
+    }
+
+    if (QFileInfo::exists(blueScreenIcoPath))
+    {
+        copyFile(blueScreenIcoPath, tempIcoPath);
+        mLogoImgPathLE->setText(tempIcoPath);
+        mLogoFromImgRB->click();
+    }
+    else
+    {
+        mLogoExePidLE->clear();
+        mLogoExePathLE->clear();
+        mLogoImgPathLE->clear();
     }
 }
 
@@ -184,7 +228,6 @@ void SettingDialog::initEmojiWgtUi()
     imgWgtLyt->addSpacing(20);
 
     mEmojiImgLE = new QLineEdit(imgWgt);
-    mEmojiImgLE->setReadOnly(true);
     mEmojiImgLE->setDisabled(true);
     imgWgtLyt->addWidget(mEmojiImgLE);
     imgWgtLyt->addSpacing(5);
@@ -262,7 +305,6 @@ void SettingDialog::initContactQRCodeWgtUi(QWidget *parent)
     hLayout->addSpacing(20);
 
     mQRCodeLE = new QLineEdit(parent);
-    mQRCodeLE->setReadOnly(true);
     mQRCodeLE->setPlaceholderText(tr("Use default QRCode"));
     hLayout->addWidget(mQRCodeLE);
     hLayout->addSpacing(5);
@@ -340,7 +382,6 @@ void SettingDialog::initLogoExePathWgtUi(QWidget *parent, QButtonGroup *radioGro
     hLayout->addSpacing(20);
 
     mLogoExePathLE = new QLineEdit(parent);
-    mLogoExePathLE->setReadOnly(true);
     mLogoExePathLE->setDisabled(true);
     hLayout->addWidget(mLogoExePathLE);
     hLayout->addSpacing(5);
@@ -583,6 +624,12 @@ void SettingDialog::initBuildWgtUi()
     mResetBtn->setObjectName(QStringLiteral("BuildButton"));
     mResetBtn->setText(tr("Reset to Default Settings"));
     hLayout->addWidget(mResetBtn);
+    hLayout->addSpacing(20);
+
+    mPreviewBtn = new QToolButton(mBuildWgt);
+    mPreviewBtn->setObjectName(QStringLiteral("BuildButton"));
+    mPreviewBtn->setText(tr("Preview Blue Screen"));
+    hLayout->addWidget(mPreviewBtn);
     hLayout->addStretch();
 }
 
@@ -590,6 +637,7 @@ void SettingDialog::connectSignals()
 {
     connect(mEmojiCharRB, &QRadioButton::clicked, this, &SettingDialog::slotEmojiRadioBtnClicked);
     connect(mEmojiImgRB, &QRadioButton::clicked, this, &SettingDialog::slotEmojiRadioBtnClicked);
+    connect(mEmojiImgScanBtn, &QToolButton::clicked, this, &SettingDialog::slotEmojiImageScanBtnClicked);
 
     connect(mLogoFromExePathRB, &QRadioButton::clicked, this, &SettingDialog::slotIconRadioBtnClicked);
     connect(mLogoFromExePidRB, &QRadioButton::clicked, this, &SettingDialog::slotIconRadioBtnClicked);
@@ -600,10 +648,12 @@ void SettingDialog::connectSignals()
     connect(mLogoImgPathScanBtn, &QToolButton::clicked, this, &SettingDialog::slotIconFromImgScanBtnClicked);
     connect(mLogoImgPathLE, &QLineEdit::textChanged, this, &SettingDialog::slotIconFromImgTextChanged);
 
+    connect(mQRCodeScanBtn, &QToolButton::clicked, this, &SettingDialog::slotQRCodeScanBtnClicked);
     connect(mBgScanBtn, &QToolButton::clicked, this, &SettingDialog::slotBgScanBtnClicked);
     connect(mFontScanBtn, &QToolButton::clicked, this, &SettingDialog::slotFontScanBtnClicked);
     connect(mBuildBtn, &QToolButton::clicked, this, &SettingDialog::slotBuildBtnClicked);
     connect(mResetBtn, &QToolButton::clicked, this, &SettingDialog::slotResetBtnClicked);
+    connect(mPreviewBtn, &QToolButton::clicked, this, &SettingDialog::slotPreviewBtnClicked);
     connect(mCmdCbb, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingDialog::slotCmdTypeIndexChanged);
 }
 
@@ -638,8 +688,21 @@ void SettingDialog::updateIcoPreview()
     }
 }
 
+void SettingDialog::preventComboboxScroll()
+{
+    auto comboboxList = this->findChildren<QComboBox*>();
+    foreach(auto each, comboboxList)
+    {
+        each->installEventFilter(this);
+    }
+}
+
 bool SettingDialog::eventFilter(QObject *obj, QEvent *event)
 {
+    if (event->type() == QEvent::Wheel && obj->inherits("QComboBox"))
+    {
+        return true;
+    }
     return QDialog::eventFilter(obj, event);
 }
 
@@ -657,6 +720,18 @@ void SettingDialog::slotEmojiRadioBtnClicked()
         mEmojiImgLE->setEnabled(true);
         mEmojiImgScanBtn->setEnabled(true);
     }
+}
+
+void SettingDialog::slotEmojiImageScanBtnClicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select icon file"),
+                                                    "",
+                                                    tr("PNG (*.png);;JPG (*.jpg)"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    mEmojiImgLE->setText(fileName);
 }
 
 void SettingDialog::slotIconRadioBtnClicked()
@@ -710,7 +785,7 @@ void SettingDialog::slotIconFromPidLEEditFinished()
 void SettingDialog::slotIconFromExeScanBtnClicked()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Extract icon from exe"),
-                                                    "/home",
+                                                    "",
                                                     tr("Exe (*.exe)"));
     if (fileName.isEmpty()) {
         return;
@@ -733,7 +808,7 @@ void SettingDialog::slotIconFromExeTextChanged()
 void SettingDialog::slotIconFromImgScanBtnClicked()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Select icon file"),
-                                                    "/home",
+                                                    "",
                                                     tr("ICO (*.ico)"));
     if (fileName.isEmpty()) {
         return;
@@ -749,21 +824,21 @@ void SettingDialog::slotIconFromImgTextChanged()
     }
     if (imgPath != tempIcoPath)
     {
-        QFile in(imgPath);
-        if (!in.open(QIODevice::ReadOnly)) {
-            return;
-        }
-
-        QByteArray content = in.readAll();
-        in.close();
-        QFile out(tempIcoPath);
-        if (!out.open(QIODevice::WriteOnly)) {
-            return;
-        }
-        out.write(content);
-        out.close();
+        copyFile(imgPath, tempIcoPath);
     }
     updateIcoPreview();
+}
+
+void SettingDialog::slotQRCodeScanBtnClicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select icon file"),
+                                                    "",
+                                                    tr("PNG (*.png);;JPG (*.jpg)"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    mQRCodeLE->setText(fileName);
 }
 
 void SettingDialog::slotBgScanBtnClicked()
@@ -805,25 +880,56 @@ void SettingDialog::slotFontScanBtnClicked()
             .arg(color.blue()));
 }
 
-void SettingDialog::slotBuildBtnClicked()
+bool SettingDialog::slotBuildBtnClicked()
 {
     AppInfoModel &model = AppInfo::instance()->getModel();
     if (mEmojiCharRB->isChecked())
     {
+        if (mEmojiCharLE->text().isEmpty())
+        {
+            QMessageBox::warning(this,
+                                 tr("Warning"),
+                                 tr("Please input correct emoji characters!"));
+            return false;
+        }
         model.mEmojiType = EEmojiType::Char;
         model.mEmojiCharacter = mEmojiCharLE->text();
         model.mEmojiImgName = "";
     }
     else
     {
+        if (!QFileInfo::exists(mEmojiImgLE->text()))
+        {
+            QMessageBox::warning(this,
+                                 tr("Warning"),
+                                 tr("Please input correct image path!"));
+            return false;
+        }
         model.mEmojiType = EEmojiType::Img;
         model.mEmojiCharacter = "";
-        model.mEmojiImgName = mEmojiImgLE->text();
+        model.mEmojiImgName = EMOJI_NAME;
+        QPixmap pixmap(mEmojiImgLE->text());
+        pixmap.save(emojiIcoPath);
     }
 
     model.mMainContent = mContentTE->toPlainText();
     model.mCttHint = mCttHintTE->toPlainText();
     model.mCttInfo = mCttInfoTE->toPlainText();
+
+    if (QFileInfo::exists(mQRCodeLE->text()))
+    {
+        model.mQrcodeName = QRCODE_NAME;
+        QPixmap pixmap(mQRCodeLE->text());
+        pixmap.save(qrcodeIcoPath);
+    }
+    else
+    {
+        model.mQrcodeName.clear();
+        if (QFileInfo::exists(qrcodeIcoPath)) {
+            QDir dir;
+            dir.remove(qrcodeIcoPath);
+        }
+    }
 
     model.progressTime = mProgressLE->text().toUInt();
     model.mHotKey = mHotKeyKSE->keySequence().toString();
@@ -846,14 +952,29 @@ void SettingDialog::slotBuildBtnClicked()
         dir.mkpath(iconFolder);
     }
     QFile file(iconPath);
-    file.copy(blueScreenIcoPath);
+    copyFile(iconPath, blueScreenIcoPath);
     AppInfo::instance()->save();
+
+    copyFile(QCoreApplication::applicationDirPath() + "/config.ini",
+             QCoreApplication::applicationDirPath() + "/" + FOLDER_NAME + "/config.ini");
+    return true;
 }
 
 void SettingDialog::slotResetBtnClicked()
 {
     AppInfo::instance()->reset();
     initData();
+}
+
+void SettingDialog::slotPreviewBtnClicked()
+{
+    bool res = slotBuildBtnClicked();
+    if (!res) {
+        return;
+    }
+    QString exePath = QCoreApplication::applicationDirPath() + "/" + FOLDER_NAME + "/BlueScreen.exe";
+    QProcess proc;
+    proc.startDetached(exePath, {});
 }
 
 void SettingDialog::slotCmdTypeIndexChanged(int index)

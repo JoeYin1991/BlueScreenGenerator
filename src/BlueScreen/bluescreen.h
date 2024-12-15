@@ -35,5 +35,8 @@ private:
     QLabel*                     mProgressLbl = nullptr;
     int                         mProgress = 0;
     QTimer*                     mTimer;
+
+    const QString               emojiIcoPath;
+    const QString               qrcodeIcoPath;
 };
 #endif // BLUESCREEN_H

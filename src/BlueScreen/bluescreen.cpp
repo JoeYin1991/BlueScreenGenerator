@@ -15,6 +15,8 @@ BlueScreenDlg::BlueScreenDlg(bool isMainScreen,
     : QDialog(parent)
     , model(AppInfo::instance()->getModel())
     , isMainScreen(isMainScreen)
+    , emojiIcoPath(QCoreApplication::applicationDirPath()+"/emoji.png")
+    , qrcodeIcoPath(QCoreApplication::applicationDirPath()+"/qrcode.png")
 {
     setWindowFlags(Qt::FramelessWindowHint);
 
@@ -69,7 +71,7 @@ void BlueScreenDlg::initUi()
 
     mLayout->addStretch();
     initEmojiUi();
-    mLayout->addSpacing(50);
+    mLayout->addSpacing(20);
     initMainContentUi();
     mLayout->addSpacing(50);
     initProgressUi();
@@ -97,6 +99,12 @@ void BlueScreenDlg::initEmojiUi()
                                       "color: rgb(%1,%2,%3);"
                                       ).arg(model.mFontColor.red()).arg(model.mFontColor.green()).arg(model.mFontColor.blue()));
     }
+    else
+    {
+        QPixmap pixmap(emojiIcoPath);
+        pixmap = pixmap.scaledToHeight(200, Qt::SmoothTransformation);
+        emojiLbl->setPixmap(pixmap);
+    }
     mLayout->addWidget(emojiLbl, 0, Qt::AlignLeft);
 }
 
@@ -107,7 +115,6 @@ void BlueScreenDlg::initMainContentUi()
     contentLbl->setText(model.mMainContent);
     contentLbl->setStyleSheet(QString("font-family: 'Microsoft YaHei UI';"
                                 "font-size: 30px;"
-                                "font-weight: 200;"
                                 "color: rgb(%1,%2,%3);"
                                       ).arg(model.mFontColor.red()).arg(model.mFontColor.green()).arg(model.mFontColor.blue()));
     mLayout->addWidget(contentLbl);
@@ -141,7 +148,7 @@ void BlueScreenDlg::initContactUi()
     qrCodeLbl->setFixedSize(fixSize, fixSize);
     hLayout->addWidget(qrCodeLbl);
 
-    QString qrCodePath = QCoreApplication::applicationDirPath() + "/img/qrcode.png";
+    QString qrCodePath = qrcodeIcoPath;
     if (!QFileInfo::exists(qrCodePath)) {
         qrCodePath = ":/img/qrcode";
     }

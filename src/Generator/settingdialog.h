@@ -80,11 +80,14 @@ private:
 
     void updateIcoPreview(PBYTE buffer, DWORD outLen);
     void updateIcoPreview();
+
+    void preventComboboxScroll();
 protected:
     bool eventFilter(QObject *o, QEvent *e) override;
 
 private slots:
     void slotEmojiRadioBtnClicked();
+    void slotEmojiImageScanBtnClicked();
 
     void slotIconRadioBtnClicked();
     void slotIconFromPidLEEditFinished();
@@ -93,10 +96,12 @@ private slots:
     void slotIconFromImgScanBtnClicked();
     void slotIconFromImgTextChanged();
 
+    void slotQRCodeScanBtnClicked();
     void slotBgScanBtnClicked();
     void slotFontScanBtnClicked();
-    void slotBuildBtnClicked();
+    bool slotBuildBtnClicked();
     void slotResetBtnClicked();
+    void slotPreviewBtnClicked();
     void slotCmdTypeIndexChanged(int index);
 private:
     QScrollArea             *mScrollArea = nullptr;
@@ -154,9 +159,11 @@ private:
     QWidget                 *mBuildWgt = nullptr;
     QToolButton             *mBuildBtn = nullptr;
     QToolButton             *mResetBtn = nullptr;
+    QToolButton             *mPreviewBtn = nullptr;
 
     const QString           tempIcoPath;
     const QString           blueScreenIcoPath;
-
+    const QString           emojiIcoPath;
+    const QString           qrcodeIcoPath;
 };
 #endif // SETTINGDIALOG_H
