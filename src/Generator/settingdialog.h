@@ -82,6 +82,8 @@ private:
     void updateIcoPreview();
 
     void preventComboboxScroll();
+
+    bool buildConfig();
 protected:
     bool eventFilter(QObject *o, QEvent *e) override;
 
@@ -99,7 +101,8 @@ private slots:
     void slotQRCodeScanBtnClicked();
     void slotBgScanBtnClicked();
     void slotFontScanBtnClicked();
-    bool slotBuildBtnClicked();
+    void slotOutputScanBtnClicked();
+    void slotBuildBtnClicked();
     void slotResetBtnClicked();
     void slotPreviewBtnClicked();
     void slotCmdTypeIndexChanged(int index);
@@ -157,6 +160,8 @@ private:
     QTextEdit               *mCmdTE = nullptr;
 
     QWidget                 *mBuildWgt = nullptr;
+    QLineEdit               *mOutputPathLE = nullptr;
+    QToolButton             *mOutputScanBtn = nullptr;
     QToolButton             *mBuildBtn = nullptr;
     QToolButton             *mResetBtn = nullptr;
     QToolButton             *mPreviewBtn = nullptr;

@@ -29,6 +29,7 @@
 #include <QMessageBox>
 #include <QListView>
 #include <QProcess>
+#include <QtConcurrent/QtConcurrent>
 
 const QString ICON_NAME = "icon.ico";
 const QString EMOJI_NAME = "emoji.png";
@@ -608,10 +609,35 @@ void SettingDialog::initBuildWgtUi()
     mBuildWgt->setObjectName(QStringLiteral("GroupWidget"));
     mMainLayout->addWidget(mBuildWgt);
 
+    QVBoxLayout *vLayout = new QVBoxLayout;
+    vLayout->setContentsMargins(35, 20, 35, 20);
+    vLayout->setSpacing(20);
+    mBuildWgt->setLayout(vLayout);
+
+    QHBoxLayout *oLayout = new QHBoxLayout;
+    oLayout->setContentsMargins(0, 0, 0, 0);
+    oLayout->setSpacing(0);
+    vLayout->addLayout(oLayout);
+
+    QLabel *outputLbl = new QLabel(mBuildWgt);
+    outputLbl->setText(tr("Output path:"));
+    oLayout->addWidget(outputLbl);
+    oLayout->addSpacing(20);
+
+    mOutputPathLE = new QLineEdit(mBuildWgt);
+    mOutputPathLE->setReadOnly(true);
+    mOutputPathLE->setPlaceholderText(tr("Select the exe output path"));
+    oLayout->addWidget(mOutputPathLE);
+    oLayout->addSpacing(5);
+
+    mOutputScanBtn = new QToolButton(mBuildWgt);
+    mOutputScanBtn->setObjectName(QStringLiteral("BrowserIconButton"));
+    oLayout->addWidget(mOutputScanBtn);
+
     QHBoxLayout *hLayout = new QHBoxLayout;
-    hLayout->setContentsMargins(0, 20, 0, 20);
+    hLayout->setContentsMargins(0, 0, 0, 0);
     hLayout->setSpacing(0);
-    mBuildWgt->setLayout(hLayout);
+    vLayout->addLayout(hLayout);
     hLayout->addStretch();
 
     mBuildBtn = new QToolButton(mBuildWgt);
@@ -655,6 +681,7 @@ void SettingDialog::connectSignals()
     connect(mResetBtn, &QToolButton::clicked, this, &SettingDialog::slotResetBtnClicked);
     connect(mPreviewBtn, &QToolButton::clicked, this, &SettingDialog::slotPreviewBtnClicked);
     connect(mCmdCbb, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingDialog::slotCmdTypeIndexChanged);
+    connect(mOutputScanBtn, &QToolButton::clicked, this, &SettingDialog::slotOutputScanBtnClicked);
 }
 
 void SettingDialog::updateIcoPreview(PBYTE buffer, DWORD outLen)
@@ -697,6 +724,86 @@ void SettingDialog::preventComboboxScroll()
     }
 }
 
+bool SettingDialog::buildConfig()
+{
+    AppInfoModel &model = AppInfo::instance()->getModel();
+    if (mEmojiCharRB->isChecked())
+    {
+        if (mEmojiCharLE->text().isEmpty())
+        {
+            QMessageBox::warning(this,
+                                 tr("Warning"),
+                                 tr("Please input correct emoji characters!"));
+            return false;
+        }
+        model.mEmojiType = EEmojiType::Char;
+        model.mEmojiCharacter = mEmojiCharLE->text();
+        model.mEmojiImgName = "";
+    }
+    else
+    {
+        if (!QFileInfo::exists(mEmojiImgLE->text()))
+        {
+            QMessageBox::warning(this,
+                                 tr("Warning"),
+                                 tr("Please input correct image path!"));
+            return false;
+        }
+        model.mEmojiType = EEmojiType::Img;
+        model.mEmojiCharacter = "";
+        model.mEmojiImgName = EMOJI_NAME;
+        QPixmap pixmap(mEmojiImgLE->text());
+        pixmap.save(emojiIcoPath);
+    }
+
+    model.mMainContent = mContentTE->toPlainText();
+    model.mCttHint = mCttHintTE->toPlainText();
+    model.mCttInfo = mCttInfoTE->toPlainText();
+
+    if (QFileInfo::exists(mQRCodeLE->text()))
+    {
+        model.mQrcodeName = QRCODE_NAME;
+        QPixmap pixmap(mQRCodeLE->text());
+        pixmap.save(qrcodeIcoPath);
+    }
+    else
+    {
+        model.mQrcodeName.clear();
+        if (QFileInfo::exists(qrcodeIcoPath)) {
+            QDir dir;
+            dir.remove(qrcodeIcoPath);
+        }
+    }
+
+    model.progressTime = mProgressLE->text().toUInt();
+    model.mHotKey = mHotKeyKSE->keySequence().toString();
+
+    EExecCmdType type = (EExecCmdType)mCmdCbb->currentData().toUInt();
+    if (type == EExecCmdType::Custom) {
+        model.cmd = mCmdTE->toPlainText();
+    } else {
+        model.cmd = cmdMap[type];
+    }
+
+    QString iconPath = tempIcoPath;
+    if (!QFileInfo::exists(iconPath)) {
+        iconPath = ":/img/icon.ico";
+    }
+
+    QString iconFolder = QFileInfo(blueScreenIcoPath).absolutePath();
+    QDir dir;
+    if (!dir.exists(iconFolder)) {
+        dir.mkpath(iconFolder);
+    }
+    QFile file(iconPath);
+    copyFile(iconPath, blueScreenIcoPath);
+    AppInfo::instance()->save();
+
+    copyFile(QCoreApplication::applicationDirPath() + "/config.ini",
+             QCoreApplication::applicationDirPath() + "/" + FOLDER_NAME + "/config.ini");
+    return true;
+}
+
 bool SettingDialog::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::Wheel && obj->inherits("QComboBox"))
@@ -726,7 +833,7 @@ void SettingDialog::slotEmojiImageScanBtnClicked()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Select icon file"),
                                                     "",
-                                                    tr("PNG (*.png);;JPG (*.jpg)"));
+                                                    tr("IMAGE (*.png, *.jpg)"));
     if (fileName.isEmpty()) {
         return;
     }
@@ -880,84 +987,82 @@ void SettingDialog::slotFontScanBtnClicked()
             .arg(color.blue()));
 }
 
-bool SettingDialog::slotBuildBtnClicked()
+void SettingDialog::slotOutputScanBtnClicked()
 {
-    AppInfoModel &model = AppInfo::instance()->getModel();
-    if (mEmojiCharRB->isChecked())
-    {
-        if (mEmojiCharLE->text().isEmpty())
-        {
-            QMessageBox::warning(this,
-                                 tr("Warning"),
-                                 tr("Please input correct emoji characters!"));
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Exe"),
+                                                    "bluescreen.exe",
+                                                    tr("EXE (*.exe)"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    mOutputPathLE->setText(fileName);
+}
+
+void SettingDialog::slotBuildBtnClicked()
+{
+    QString outputPath = mOutputPathLE->text();
+    if (outputPath.isEmpty()) {
+        QMessageBox::warning(this,
+                             tr("Warning"),
+                             tr("Please select an output path"));
+        return;
+    }
+
+    if (!buildConfig()) {
+        return;
+    }
+
+    mBuildWgt->setEnabled(false);
+    qApp->processEvents();
+
+    QFuture<bool> future = QtConcurrent::run(QThreadPool::globalInstance(), [outputPath]{
+        const QString nsisPath = QCoreApplication::applicationDirPath() + "/tools/nsis/makensis.exe";
+        const QString packPath = QCoreApplication::applicationDirPath() + "/pack.nsi";
+        const QString packTempPath = QCoreApplication::applicationDirPath() + "/tools/nsis/pack-temp.nsi";
+
+        QFile inFile(packTempPath);
+        if (!inFile.open(QIODevice::ReadOnly)) {
             return false;
         }
-        model.mEmojiType = EEmojiType::Char;
-        model.mEmojiCharacter = mEmojiCharLE->text();
-        model.mEmojiImgName = "";
+        QString content = inFile.readAll();
+        inFile.close();
+
+        content = content.replace("{{outputPath}}", outputPath);
+        content = content.replace("{{appDir}}", QDir::toNativeSeparators(QCoreApplication::applicationDirPath()));
+        QFile outFile(packPath);
+        if (!outFile.open(QIODevice::WriteOnly)) {
+            return false;
+        }
+        outFile.write(content.toLocal8Bit());
+        outFile.close();
+
+        if (!QFileInfo::exists(nsisPath)) {
+            return false;
+        }
+        QStringList args({packPath});
+        QProcess proc;
+        proc.start(nsisPath, args);
+        proc.waitForFinished(-1);
+
+        QDir dir;
+        dir.remove(packPath);
+        return proc.exitCode() == 0;
+    });
+    bool res = future.result();
+    if (res)
+    {
+        QMessageBox::information(this,
+                                 tr("Tips"),
+                                 tr("Create bluescreen exe success!"));
     }
     else
     {
-        if (!QFileInfo::exists(mEmojiImgLE->text()))
-        {
-            QMessageBox::warning(this,
-                                 tr("Warning"),
-                                 tr("Please input correct image path!"));
-            return false;
-        }
-        model.mEmojiType = EEmojiType::Img;
-        model.mEmojiCharacter = "";
-        model.mEmojiImgName = EMOJI_NAME;
-        QPixmap pixmap(mEmojiImgLE->text());
-        pixmap.save(emojiIcoPath);
+        QMessageBox::warning(this,
+                             tr("Tips"),
+                             tr("Create bluescreen exe failed!"));
     }
-
-    model.mMainContent = mContentTE->toPlainText();
-    model.mCttHint = mCttHintTE->toPlainText();
-    model.mCttInfo = mCttInfoTE->toPlainText();
-
-    if (QFileInfo::exists(mQRCodeLE->text()))
-    {
-        model.mQrcodeName = QRCODE_NAME;
-        QPixmap pixmap(mQRCodeLE->text());
-        pixmap.save(qrcodeIcoPath);
-    }
-    else
-    {
-        model.mQrcodeName.clear();
-        if (QFileInfo::exists(qrcodeIcoPath)) {
-            QDir dir;
-            dir.remove(qrcodeIcoPath);
-        }
-    }
-
-    model.progressTime = mProgressLE->text().toUInt();
-    model.mHotKey = mHotKeyKSE->keySequence().toString();
-
-    EExecCmdType type = (EExecCmdType)mCmdCbb->currentData().toUInt();
-    if (type == EExecCmdType::Custom) {
-        model.cmd = mCmdTE->toPlainText();
-    } else {
-        model.cmd = cmdMap[type];
-    }
-
-    QString iconPath = tempIcoPath;
-    if (!QFileInfo::exists(iconPath)) {
-        iconPath = ":/img/icon.ico";
-    }
-
-    QString iconFolder = QFileInfo(blueScreenIcoPath).absolutePath();
-    QDir dir;
-    if (!dir.exists(iconFolder)) {
-        dir.mkpath(iconFolder);
-    }
-    QFile file(iconPath);
-    copyFile(iconPath, blueScreenIcoPath);
-    AppInfo::instance()->save();
-
-    copyFile(QCoreApplication::applicationDirPath() + "/config.ini",
-             QCoreApplication::applicationDirPath() + "/" + FOLDER_NAME + "/config.ini");
-    return true;
+    mBuildWgt->setEnabled(true);
 }
 
 void SettingDialog::slotResetBtnClicked()
@@ -968,11 +1073,15 @@ void SettingDialog::slotResetBtnClicked()
 
 void SettingDialog::slotPreviewBtnClicked()
 {
-    bool res = slotBuildBtnClicked();
-    if (!res) {
+    if (!buildConfig()) {
         return;
     }
     QString exePath = QCoreApplication::applicationDirPath() + "/" + FOLDER_NAME + "/BlueScreen.exe";
+    if (!QFileInfo::exists(exePath)) {
+        QMessageBox::warning(this,
+                             tr("Warning"),
+                             tr("Can not find bluescreen exe!"));
+    }
     QProcess proc;
     proc.startDetached(exePath, {});
 }

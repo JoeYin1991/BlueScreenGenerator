@@ -183,6 +183,11 @@ QToolButton:hover,
     border: 2px solid #0367C0;
 }
 
+#BuildButton:disabled {
+    background-color: #909090;
+    border: 2px solid #909090;
+}
+
 QScrollArea {
     border: none;
 }
