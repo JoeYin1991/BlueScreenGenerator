@@ -10,4 +10,8 @@
         <file alias="folder">img/folder.png</file>
         <file alias="icon.ico">icon.ico</file>
     </qresource>
+    <qresource prefix="/languages">
+        <file alias="en">languages/lang_en.qm</file>
+        <file alias="zh">languages/lang_zh.qm</file>
+    </qresource>
 </RCC>

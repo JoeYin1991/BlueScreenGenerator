@@ -940,7 +940,7 @@ void SettingDialog::slotQRCodeScanBtnClicked()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Select icon file"),
                                                     "",
-                                                    tr("PNG (*.png);;JPG (*.jpg)"));
+                                                    tr("IMAGE (*.png, *.jpg)"));
     if (fileName.isEmpty()) {
         return;
     }

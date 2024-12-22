@@ -8,6 +8,8 @@ CONFIG += c++17
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+DEFINES += LANGUAGE_MODE=\\\"ZH_CN\\\"
+
 SOURCES += \
     ../Common/appinfo.cpp \
     ../3rdparty/get-exe-icon/get-exe-icon.c \
@@ -44,3 +46,6 @@ RESOURCES += \
     resource/resource.qrc
 
 RC_ICONS = resource/icon.ico
+
+TRANSLATIONS += resource/languages/lang_zh.ts \
+                resource/languages/lang_en.ts

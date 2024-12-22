@@ -1,6 +1,7 @@
 #include "settingdialog.h"
 #include <QApplication>
 #include <QFile>
+#include <QTranslator>
 
 void loadGlobalQss()
 {
@@ -14,6 +15,18 @@ void loadGlobalQss()
     file.close();
 }
 
+void loadLanugage()
+{
+    QTranslator *trans = new QTranslator(qApp);
+
+    if (QString(LANGUAGE_MODE) == "ZH_CN"){
+        trans->load(":/languages/zh");
+    } else {
+        trans->load(":/languages/en");
+    }
+    qApp->installTranslator(trans);
+}
+
 int main(int argc, char *argv[])
 {
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -22,6 +35,7 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
     loadGlobalQss();
+    loadLanugage();
 
     SettingDialog w;
     w.show();
