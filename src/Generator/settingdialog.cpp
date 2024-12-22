@@ -39,7 +39,7 @@ const QString FOLDER_NAME = "tools/bluescreen";
 const QMap<EExecCmdType, QString> cmdNameMap = {
     {EExecCmdType::NoCmd, QObject::tr("None")},
     {EExecCmdType::LockScreen, QObject::tr("Lock Screen")},
-    {EExecCmdType::Logoff, QObject::tr("Log Off")},
+    // {EExecCmdType::Logoff, QObject::tr("Log Off")},
     {EExecCmdType::Shutdown, QObject::tr("Shutdown")},
     {EExecCmdType::Reboot, QObject::tr("Reboot")},
     {EExecCmdType::Sleep, QObject::tr("Sleep")},
@@ -49,7 +49,7 @@ const QMap<EExecCmdType, QString> cmdNameMap = {
 const QMap<EExecCmdType, QString> cmdMap = {
     {EExecCmdType::NoCmd, ""},
     {EExecCmdType::LockScreen, "rundll32.exe user32.dll,LockWorkStation"},
-    {EExecCmdType::Logoff, "logoff"},
+    // {EExecCmdType::Logoff, "logoff"},
     {EExecCmdType::Shutdown, "shutdown /s /f /t 0"},
     {EExecCmdType::Reboot, "shutdown /r /f /t 0"},
     {EExecCmdType::Sleep, "rundll32.exe powrprof.dll,SetSuspendState 0,1,0"},
